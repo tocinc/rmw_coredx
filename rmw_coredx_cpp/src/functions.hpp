@@ -1,4 +1,5 @@
 // Copyright 2015 Twin Oaks Computing, Inc.
+// Modifications copyright (C) 2017 Twin Oaks Computing, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,6 +31,7 @@ public:
   {}
 
   std::map<std::string, std::multiset<std::string>> topic_names_and_types;
+  virtual void trigger_graph_guard_condition();
 
 protected:
   virtual void add_information(const DDS::SampleInfo & sample_info,
@@ -37,7 +39,6 @@ protected:
                                const std::string & type_name);
 
   virtual void remove_information(const DDS::SampleInfo & sample_info);
-  virtual void trigger_graph_guard_condition();
 
 private:
   struct TopicDescriptor

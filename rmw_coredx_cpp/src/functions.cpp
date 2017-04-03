@@ -1,4 +1,5 @@
 // Copyright 2015 Twin Oaks Computing, Inc.
+// Modifications copyright (C) 2017 Twin Oaks Computing, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -205,6 +206,10 @@ CustomPublisherListener::on_data_available(DDS::DataReader * reader)
     }
   }
 
+  if (data_seq.length() > 0) {
+    this->trigger_graph_guard_condition();
+  }
+  
   builtin_reader->return_loan(&data_seq, &info_seq);
 }
 
@@ -240,6 +245,11 @@ CustomSubscriberListener::on_data_available(DDS::DataReader * reader)
       remove_information(*(info_seq[i]));
     }
   }
+
+  if (data_seq.length() > 0) {
+    this->trigger_graph_guard_condition();
+  }
+
   builtin_reader->return_loan(&data_seq, &info_seq);
 }
 
@@ -281,8 +291,10 @@ rmw_create_node( const char    * name,
     return NULL;
   }
 
-  // todo initialize DP QoS (put in 'name')
-  
+  DDS::DomainParticipantQos dp_qos;
+  dpf_->get_default_participant_qos(dp_qos);
+  strncpy(dp_qos.entity_name.value, name, COREDX_ENTITY_NAME_MAX);
+    
   DDS::DomainId_t           domain = static_cast<DDS::DomainId_t>(domain_id);
   DDS::DomainParticipant  * participant =
     dpf_->create_participant(domain,
@@ -481,9 +493,22 @@ rmw_destroy_node( rmw_node_t     * node )
     rmw_free(node_info->subscriber_listener);
     node_info->subscriber_listener = nullptr;
   }
+  if (node_info->graph_guard_condition) {
+    rmw_ret_t rmw_ret =
+      rmw_destroy_guard_condition(node_info->graph_guard_condition);
+    if (rmw_ret != RMW_RET_OK) {
+      RMW_SET_ERROR_MSG("failed to delete graph guard condition");
+      return RMW_RET_ERROR;
+    }
+    node_info->graph_guard_condition = nullptr;
+  }
 
   rmw_free(node_info);
   node->data = nullptr;
+
+  if (node->name) {
+    rmw_free(const_cast<char *>(node->name));
+  }
   rmw_node_free(node);
 
   return RMW_RET_OK;
@@ -636,8 +661,17 @@ rmw_create_publisher( const rmw_node_t        * node,
 
   publisher->implementation_identifier = toc_coredx_identifier;
   publisher->data = publisher_info;
+  publisher->topic_name = do_strdup(topic_name);
+  if (!publisher->topic_name) {
+    RMW_SET_ERROR_MSG("failed to allocate memory for node name");
+    goto fail;
+  }
+
+  node_info->publisher_listener->trigger_graph_guard_condition();
+  
   return publisher;
-fail:
+
+ fail:
   if (publisher) {
     rmw_publisher_free(publisher);
   }
@@ -729,6 +763,9 @@ rmw_destroy_publisher( rmw_node_t      * node,
       CoreDXStaticPublisherInfo, return RMW_RET_ERROR)
     rmw_free(publisher_info);
     publisher->data = nullptr;
+  }
+  if (publisher->topic_name) {
+    rmw_free(const_cast<char *>(publisher->topic_name));
   }
   rmw_publisher_free(publisher);
 
@@ -922,6 +959,11 @@ rmw_create_subscription( const rmw_node_t        * node,
 
   subscription->implementation_identifier = toc_coredx_identifier;
   subscription->data = subscriber_info;
+  subscription->topic_name = do_strdup(topic_name);
+  if (!subscription->topic_name) {
+    RMW_SET_ERROR_MSG("failed to allocate memory for topic name");
+    goto fail;
+  }
 
   return subscription;
 fail:
@@ -1037,6 +1079,9 @@ rmw_destroy_subscription( rmw_node_t         * node,
       CoreDXStaticSubscriberInfo, return RMW_RET_ERROR)
     rmw_free(subscriber_info);
     subscription->data = nullptr;
+  }
+  if (subscription->topic_name) {
+    rmw_free(const_cast<char *>(subscription->topic_name));
   }
   rmw_subscription_free(subscription);
 
@@ -1187,7 +1232,6 @@ rmw_create_client( const rmw_node_t                   * node,
   void * requester = nullptr;
   void * buf = nullptr;
   CoreDXStaticClientInfo * client_info = nullptr;
-  /* TODO: DDS::DataWriter * request_datawriter = nullptr; */
 
   // Begin inializing elements.
   client = rmw_client_allocate();
@@ -1245,6 +1289,7 @@ rmw_create_client( const rmw_node_t                   * node,
     RMW_SET_ERROR_MSG("failed to allocate memory for node name");
     goto fail;
   }
+  
   return client;
 fail:
   if (client_info) {
@@ -1298,21 +1343,6 @@ rmw_destroy_client( rmw_node_t * node, rmw_client_t * client )
   if (client_info)
     {
       auto response_datareader = client_info->response_datareader_;
-      /* TODO: 
-      node_info->
-        subscriber_listener->
-        remove_information(client_info->response_datareader_->get_instance_handle(),
-                           EntityType::Subscriber);
-      DDS::DataWriter * request_datawriter =
-        static_cast<DDS::DataWriter *>(client_info->callbacks_->get_request_datawriter(client_info->requester_));
-      node_info->subscriber_listener->trigger_graph_guard_condition();
-      
-      node_info->
-        publisher_listener->
-        remove_information(request_datawriter->get_instance_handle(),
-                           EntityType::Publisher);
-      node_info->publisher_listener->trigger_graph_guard_condition();
-      */
       
       if ( response_datareader && client_info->read_condition_ ) {
         if (response_datareader->delete_readcondition(client_info->read_condition_) != DDS_RETCODE_OK) {
@@ -1541,6 +1571,7 @@ rmw_create_service( const rmw_node_t                    * node,
     RMW_SET_ERROR_MSG("failed to allocate memory for node name");
     goto fail;
   }
+  
   return service;
 fail:
   if (service) {
@@ -1598,21 +1629,6 @@ rmw_destroy_service( rmw_node_t    * node,
   if (service_info)
     {
       auto request_datareader = service_info->request_datareader_;
-      /* TODO: 
-         auto node_info = static_cast<CoreDXNodeInfo *>(node->data);
-      node_info->
-        subscriber_listener->
-        remove_information(service_info->request_datareader_->get_instance_handle(),
-                           EntityType::Subscriber);
-      node_info->subscriber_listener->trigger_graph_guard_condition();
-      DDS::DataWriter * reply_datawriter =
-        static_cast<DDS::DataWriter *>(service_info->callbacks_->get_reply_datawriter(service_info->replier_));
-      node_info->
-        publisher_listener->
-        remove_information(reply_datawriter->get_instance_handle(),
-                           EntityType::Publisher);
-      node_info->publisher_listener->trigger_graph_guard_condition();
-      */
 
       if (request_datareader && service_info->read_condition_) {
         if (request_datareader->delete_readcondition(service_info->read_condition_) != DDS_RETCODE_OK) {
@@ -1791,6 +1807,7 @@ rmw_destroy_guard_condition( rmw_guard_condition_t * guard_condition )
   auto result = RMW_RET_OK;
   RMW_TRY_DESTRUCTOR( ((DDS::GuardCondition *)guard_condition->data)->~GuardCondition(),
                       DDS::GuardCondition, result = RMW_RET_ERROR)
+  rmw_free(guard_condition->data);
   rmw_guard_condition_free(guard_condition);
   return result;
 }
@@ -2110,16 +2127,13 @@ rmw_get_node_names(const rmw_node_t * node,
     return RMW_RET_ERROR;
   }
   
-#if 0
-  /* TODO: what to use as 'name'?
-   */
   DDS::DomainParticipant * participant = static_cast<CoreDXNodeInfo *>(node->data)->participant;
   DDS::InstanceHandleSeq handles;
-  if (participant->get_discovered_participants(handles) != DDS_RETCODE_OK) {
+  if (participant->get_discovered_participants(&handles) != DDS_RETCODE_OK) {
     RMW_SET_ERROR_MSG("unable to fetch discovered participants.");
     return RMW_RET_ERROR;
   }
-  auto length = handles.length() + 1;  // add myself
+  uint32_t length = handles.length() + 1;  // add myself
   node_names->size = length;
   node_names->data = static_cast<char **>(rmw_allocate(length * sizeof(char *)));
 
@@ -2129,16 +2143,16 @@ rmw_get_node_names(const rmw_node_t * node,
     RMW_SET_ERROR_MSG("failed to get default participant qos");
     return RMW_RET_ERROR;
   }
-  auto participant_name_length = strlen(participant_qos.participant_name.name) + 1;
+  auto participant_name_length = strlen(participant_qos.entity_name.value) + 1;
   node_names->data[0] =
     static_cast<char *>(rmw_allocate(participant_name_length * sizeof(char)));
   snprintf(node_names->data[0], participant_name_length, "%s",
-    participant_qos.participant_name.name);
+           participant_qos.entity_name.value);
 
-  for (auto i = 1; i < length; ++i) {
+  for (uint32_t i = 1; i < length; ++i) {
     DDS::ParticipantBuiltinTopicData pbtd;
-    auto dds_ret = participant->get_discovered_participant_data(pbtd, handles[i - 1]);
-    char * name = pbtd.participant_name.name;
+    auto dds_ret = participant->get_discovered_participant_data(&pbtd, handles[i - 1]);
+    char * name = pbtd.entity_name;
     if (!name || dds_ret != DDS_RETCODE_OK) {
       name = const_cast<char *>("(no name)");
     }
@@ -2146,7 +2160,7 @@ rmw_get_node_names(const rmw_node_t * node,
     node_names->data[i] = static_cast<char *>(rmw_allocate(name_length * sizeof(char)));
     snprintf(node_names->data[i], name_length, "%s", name);
   }
-#endif
+
   return RMW_RET_OK;
 }
 

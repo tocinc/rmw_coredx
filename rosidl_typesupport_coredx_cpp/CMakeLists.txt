@@ -1,3 +1,4 @@
+# Modifications copyright (C) 2017 Twin Oaks Computing, Inc.
 cmake_minimum_required(VERSION 3.5)
 
 project(rosidl_typesupport_coredx_cpp)
@@ -25,7 +26,7 @@ ament_export_dependencies(rosidl_generator_cpp)
 ament_export_dependencies(rosidl_generator_dds_idl)
 ament_export_dependencies(rosidl_typesupport_interface)
 
-ament_export_include_directories(include) # include/${PROJECT_NAME}/impl)
+ament_export_include_directories(include)
 
 ament_python_install_package(${PROJECT_NAME})
 
