@@ -281,9 +281,11 @@ rmw_init ()
  */
 rmw_node_t *
 rmw_create_node( const char    * name,
+                 const char * namespace_,
                  size_t          domain_id )
 {
   (void)name;
+  (void)namespace_;
 
   DDS::DomainParticipantFactory * dpf_ = DDS::DomainParticipantFactory::get_instance();
   if (!dpf_) {
