@@ -1829,9 +1829,6 @@ rmw_trigger_guard_condition( const rmw_guard_condition_t * guard_condition_handl
   DDS::GuardCondition * guard_condition =
     static_cast<DDS::GuardCondition *>(guard_condition_handle->data);
 
-  struct timespec now;
-  clock_gettime(CLOCK_REALTIME, &now);
-
   if (!guard_condition) {
     RMW_SET_ERROR_MSG("guard condition is null");
     return RMW_RET_ERROR;
