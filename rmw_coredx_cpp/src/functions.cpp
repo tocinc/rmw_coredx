@@ -102,7 +102,7 @@
     
 
 
-const char * toc_coredx_identifier = "coredx_static";
+const char * toc_coredx_identifier = "rmw_coredx_cpp";
 
 /* ************************************************
  */
@@ -2117,8 +2117,9 @@ rmw_destroy_topic_names_and_types( rmw_topic_names_and_types_t * topic_names_and
 /* ************************************************
  */
 rmw_ret_t
-rmw_get_node_names(const rmw_node_t * node,
-                   rmw_string_array_t * node_names)
+rmw_get_node_names(
+  const rmw_node_t * node,
+  utilities_string_array_t * node_names)
 {
   if (!node) {
     RMW_SET_ERROR_MSG("node handle is null");
@@ -2169,33 +2170,6 @@ rmw_get_node_names(const rmw_node_t * node,
   return RMW_RET_OK;
 }
 
-/* ************************************************
- */
-rmw_ret_t
-rmw_destroy_node_names(
-  rmw_string_array_t * node_names)
-{
-  if (!node_names)
-    {
-      RMW_SET_ERROR_MSG("node_names handle is null");
-      return RMW_RET_ERROR;
-    }
-  for (size_t i = 0; i < node_names->size; ++i)
-    {
-      rmw_free(node_names->data[i]);
-      node_names->data[i] = nullptr;
-    }
-  if (node_names->data)
-    {
-      rmw_free(node_names->data);
-      node_names->data = nullptr;
-    }
-  node_names->size = 0;
-  return RMW_RET_OK;
-}
-
-/* ************************************************
- */
 rmw_ret_t
 rmw_count_publishers( const rmw_node_t * node,
                       const char       * topic_name,
