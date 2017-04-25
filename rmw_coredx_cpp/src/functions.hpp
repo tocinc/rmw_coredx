@@ -360,25 +360,7 @@ wait(const char * implementation_identifier,
     timeout.nanosec = static_cast<int32_t>(wait_timeout->nsec);
   }
 
-#if (DO_DEBUG)
-  /* DEBUG -- */
-  struct timespec now;
-  clock_gettime(CLOCK_REALTIME, &now);
-  fprintf(stderr, "%d.%09d: calling waitset.wait(%d.%09d)... \n",
-          (int)now.tv_sec, (int)now.tv_nsec,
-          (int)timeout.sec, (int)timeout.nanosec);
-  /* DEBUG -- */
-#endif
-
   DDS::ReturnCode_t status = dds_waitset->wait(active_conditions, timeout);
-
-#if (DO_DEBUG)
-  /* DEBUG -- */
-  clock_gettime(CLOCK_REALTIME, &now);
-  fprintf(stderr, "%d.%09d: wait() : %s\n",
-          (int)now.tv_sec, (int)now.tv_nsec, DDS_error(status));
-  /* DEBUG -- */
-#endif
 
   if (status == DDS::RETCODE_TIMEOUT) {
     return RMW_RET_TIMEOUT;

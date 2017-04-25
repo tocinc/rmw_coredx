@@ -281,10 +281,9 @@ rmw_init ()
  */
 rmw_node_t *
 rmw_create_node( const char    * name,
+                 const char    * namespace_,
                  size_t          domain_id )
 {
-  (void)name;
-
   DDS::DomainParticipantFactory * dpf_ = DDS::DomainParticipantFactory::get_instance();
   if (!dpf_) {
     RMW_SET_ERROR_MSG("failed to get participant factory");
@@ -294,7 +293,7 @@ rmw_create_node( const char    * name,
   DDS::DomainParticipantQos dp_qos;
   dpf_->get_default_participant_qos(dp_qos);
   strncpy(dp_qos.entity_name.value, name, COREDX_ENTITY_NAME_MAX);
-    
+  
   DDS::DomainId_t           domain = static_cast<DDS::DomainId_t>(domain_id);
   DDS::DomainParticipant  * participant =
     dpf_->create_participant(domain,
@@ -375,6 +374,7 @@ rmw_create_node( const char    * name,
   node_handle->implementation_identifier = toc_coredx_identifier;
   node_handle->data                      = participant;
   node_handle->name                      = do_strdup(name);
+  node_handle->namespace_                = do_strdup(namespace_);
   if (!node_handle->name) {
     RMW_SET_ERROR_MSG("failed to allocate memory for node name");
     goto fail;
@@ -426,6 +426,9 @@ fail:
   if (node_handle) {
     if (node_handle->name) {
       rmw_free(const_cast<char *>(node_handle->name));
+    }
+    if (node_handle->namespace_) {
+      rmw_free(const_cast<char *>(node_handle->namespace_));
     }
     rmw_free(node_handle);
   }
@@ -508,6 +511,11 @@ rmw_destroy_node( rmw_node_t     * node )
 
   if (node->name) {
     rmw_free(const_cast<char *>(node->name));
+    node->name = NULL;
+  }
+  if (node->namespace_) {
+    rmw_free(const_cast<char *>(node->namespace_));
+    node->namespace_ = NULL;
   }
   rmw_node_free(node);
 
@@ -1828,9 +1836,6 @@ rmw_trigger_guard_condition( const rmw_guard_condition_t * guard_condition_handl
 
   DDS::GuardCondition * guard_condition =
     static_cast<DDS::GuardCondition *>(guard_condition_handle->data);
-
-  struct timespec now;
-  clock_gettime(CLOCK_REALTIME, &now);
 
   if (!guard_condition) {
     RMW_SET_ERROR_MSG("guard condition is null");
