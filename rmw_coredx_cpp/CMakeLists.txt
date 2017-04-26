@@ -80,9 +80,10 @@ configure_rmw_library(rmw_coredx_cpp)
 if(WIN32)
   # target_compile_definitions(rmw_coredx_cpp
   #   PRIVATE "_CRT_NONSTDC_NO_DEPRECATE")
-  # target_compile_definitions(rmw_coredx_cpp
-  #   PRIVATE "ROSIDL_TYPESUPPORT_COREDX_CPP_BUILDING_DLL"
-  #           "RMW_COREDX_SHARED_BUILDING_DLL")
+  target_compile_definitions(rmw_coredx_cpp
+    PRIVATE "ROSIDL_TYPESUPPORT_COREDX_CPP_BUILDING_DLL"
+            "RMW_COREDX_SHARED_BUILDING_DLL"
+            "COREDX_DLL")
 endif()
 
 if(BUILD_TESTING)

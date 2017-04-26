@@ -2118,7 +2118,7 @@ rmw_destroy_topic_names_and_types( rmw_topic_names_and_types_t * topic_names_and
  */
 rmw_ret_t
 rmw_get_node_names(const rmw_node_t * node,
-                   rmw_string_array_t * node_names)
+                   utilities_string_array_t * node_names)
 {
   if (!node) {
     RMW_SET_ERROR_MSG("node handle is null");
@@ -2173,7 +2173,7 @@ rmw_get_node_names(const rmw_node_t * node,
  */
 rmw_ret_t
 rmw_destroy_node_names(
-  rmw_string_array_t * node_names)
+  utilities_string_array_t * node_names)
 {
   if (!node_names)
     {
