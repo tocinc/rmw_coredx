@@ -45,11 +45,13 @@ if(NOT rosidl_typesupport_coredx_cpp_FOUND)
   return()
 endif()
 
+find_package(rcutils REQUIRED)
 find_package(rmw REQUIRED)
 find_package(rosidl_generator_c REQUIRED)
 find_package(rosidl_generator_cpp REQUIRED)
 
 ament_export_dependencies(
+  rcutils
   rmw
   rosidl_generator_c
   rosidl_generator_cpp
@@ -64,6 +66,7 @@ register_rmw_implementation(
 
 add_library(rmw_coredx_cpp SHARED src/functions.cpp)
 ament_target_dependencies(rmw_coredx_cpp
+  "rcutils"
   "rmw"
   "rosidl_generator_c"
   "rosidl_generator_cpp"
