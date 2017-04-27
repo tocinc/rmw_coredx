@@ -200,7 +200,9 @@ if(WIN32)
   target_compile_definitions(${rosidl_generate_interfaces_TARGET}${_target_suffix}
     PRIVATE "ROSIDL_TYPESUPPORT_COREDX_CPP_BUILDING_DLL_${PROJECT_NAME}")
   target_compile_definitions(${rosidl_generate_interfaces_TARGET}${_target_suffix}
-    PRIVATE "NDDS_USER_DLL_EXPORT_${PROJECT_NAME}")
+    PRIVATE "COREDX_DLL_TS")
+  target_compile_definitions(${rosidl_generate_interfaces_TARGET}${_target_suffix}
+    PRIVATE "COREDX_DLL_TS_EXPORTS")
 endif()
 if(NOT WIN32)
   set(_target_compile_flags "-Wall -Wextra -Wpedantic")
