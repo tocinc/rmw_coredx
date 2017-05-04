@@ -73,6 +73,12 @@ ament_target_dependencies(rmw_coredx_cpp
   "rosidl_typesupport_coredx_c"
   "rosidl_typesupport_coredx_cpp"
   "CoreDX")
+
+if(CoreDX_GLIBCXX_USE_CXX11_ABI_ZERO)
+  target_compile_definitions(rmw_coredx_cpp
+    PRIVATE CoreDX_GLIBCXX_USE_CXX11_ABI_ZERO)
+endif()
+
 ament_export_libraries(rmw_coredx_cpp ${CoreDX_LIBRARIES})
 
 # On Windows this adds the RMW_BUILDING_DLL definition.

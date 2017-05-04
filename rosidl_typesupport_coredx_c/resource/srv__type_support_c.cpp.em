@@ -10,6 +10,11 @@
 @#  - get_header_filename_from_msg_name (function)
 @#######################################################################
 @
+
+#ifdef CoreDX_GLIBCXX_USE_CXX11_ABI_ZERO
+#define _GLIBCXX_USE_CXX11_ABI 0
+#endif
+
 #include "@(spec.pkg_name)/srv/@(get_header_filename_from_msg_name(spec.srv_name))__rosidl_typesupport_coredx_c.h"
 
 #include <dds/dds.hh>

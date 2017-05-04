@@ -142,7 +142,27 @@ if(NOT "${_COREDX_TOP} " STREQUAL " ")
 endif()
 
 if(CoreDX_FOUND AND NOT WIN32)
-  list(APPEND CoreDX_LIBRARIES "pthread")
+  list(APPEND CoreDX_LIBRARIES "pthread" "dl")
+
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    # check with which ABI the CoreDX DDS libraries are built
+    configure_file(
+      "${coredx_cmake_module_DIR}/check_abi.cmake"
+      "${CMAKE_CURRENT_BINARY_DIR}/coredx_cmake_module/check_abi/CMakeLists.txt"
+      @ONLY
+      )
+    try_compile(
+      CoreDX_GLIBCXX_USE_CXX11_ABI_ZERO
+      "${CMAKE_CURRENT_BINARY_DIR}/coredx_cmake_module/check_abi/build"
+      "${CMAKE_CURRENT_BINARY_DIR}/coredx_cmake_module/check_abi"
+      check_abi exe)
+
+    message(STATUS "compile result: ${CoreDX_GLIBCXX_USE_CXX11_ABI_ZERO}" )
+    if(CoreDX_GLIBCXX_USE_CXX11_ABI_ZERO)
+      message(STATUS "CoreDX DDS distribution needs _GLIBCXX_USE_CXX11_ABI=0")
+    endif()
+  endif()
+
 endif()
 
 include(FindPackageHandleStandardArgs)

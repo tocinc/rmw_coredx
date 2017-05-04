@@ -178,6 +178,11 @@ if(rosidl_generate_interfaces_LIBRARY_NAME)
     PROPERTIES OUTPUT_NAME "${rosidl_generate_interfaces_LIBRARY_NAME}${_target_suffix}")
 endif()
 
+if(CoreDX_GLIBCXX_USE_CXX11_ABI_ZERO)
+  target_compile_definitions(${rosidl_generate_interfaces_TARGET}${_target_suffix}
+    PRIVATE CoreDX_GLIBCXX_USE_CXX11_ABI_ZERO)
+endif()
+
 ament_target_dependencies(${rosidl_generate_interfaces_TARGET}${_target_suffix}
   "rmw"
   "rosidl_typesupport_coredx_cpp"
