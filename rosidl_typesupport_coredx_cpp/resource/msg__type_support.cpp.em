@@ -96,6 +96,13 @@ convert_ros_message_to_dds(
       throw std::runtime_error("array size exceeds upper bound");
     }
 @[      end if]@
+
+@[      if field.type.type == 'string']@
+    for (size_t i = 0; i < dds_message.@(field.name)_.length(); i++) {
+      DDS::String_free(dds_message.@(field.name)_[static_cast<int32_t>(i)]);
+    }
+@[      end if]@
+      
     uint32_t length = static_cast<int32_t>(size);
     if (!dds_message.@(field.name)_.resize(length)) {
       throw std::runtime_error("failed to set length of sequence");
@@ -103,7 +110,6 @@ convert_ros_message_to_dds(
 @[    end if]@
     for (size_t i = 0; i < size; i++) {
 @[    if field.type.type == 'string']@
-      DDS::String_free(dds_message.@(field.name)_[static_cast<int32_t>(i)]);
       dds_message.@(field.name)_[static_cast<int32_t>(i)] =
         DDS::String_dup(ros_message.@(field.name)[i].c_str());
 @[    elif field.type.is_primitive_type()]@

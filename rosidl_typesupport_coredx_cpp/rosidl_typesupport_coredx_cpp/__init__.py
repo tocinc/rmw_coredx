@@ -147,7 +147,12 @@ def generate_dds_coredx_cpp(
         ]
         # print("Command: " , cmd);
 
-        subprocess.check_call(cmd)
+        try:
+            subprocess.run(cmd)
+        except subprocess.CalledProcessError as e:
+            print ("CODEGEN: output:\n", e.stdout)
+            print ("CODEGEN: stderr:\n", e.stderr)
+            return e.returncode
 
         # if os.name == 'nt':
         #     # modify generated code to use declspec(dllimport)
