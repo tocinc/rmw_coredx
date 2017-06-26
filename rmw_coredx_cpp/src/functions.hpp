@@ -476,6 +476,10 @@ wait(const char * implementation_identifier,
     else
       fprintf(stderr, "waitset: active: req status_cond: %p\n", condition);
 #endif
+    DDS_ReturnCode_t retcode = dds_waitset->detach_condition(*condition);
+    if (retcode != DDS_RETCODE_OK) {
+      RMW_SET_ERROR_MSG("Failed to get detach condition from waitset");
+    }
   }
 
   // set client handles to zero for all not triggered conditions
@@ -516,6 +520,10 @@ wait(const char * implementation_identifier,
                 response_datareader->get_status_changes());
       }
 #endif
+    DDS_ReturnCode_t retcode = dds_waitset->detach_condition(*condition);
+    if (retcode != DDS_RETCODE_OK) {
+      RMW_SET_ERROR_MSG("Failed to get detach condition from waitset");
+    }
   }
   return RMW_RET_OK;
 }
