@@ -2044,6 +2044,7 @@ rmw_get_topic_names_and_types( const rmw_node_t            * node,
   if (topics.size() > 0) {
 	rcutils_allocator_t allocator = rcutils_get_default_allocator();
 	rmw_ret_t ret = rmw_names_and_types_init(topic_names_and_types, sizeof(char *) * topics.size(), &allocator);
+    if (ret != RMW_RET_OK) {
       RMW_SET_ERROR_MSG("failed to allocate memory for topic names and types")
       return RMW_RET_ERROR;
     }
