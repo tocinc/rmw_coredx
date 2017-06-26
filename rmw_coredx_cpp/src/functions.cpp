@@ -38,6 +38,7 @@
 #include <rmw/sanity_checks.h>
 #include <rmw/names_and_types.h>
 #include <rcutils/strdup.h>
+#include <rmw/convert_rcutils_ret_to_rmw_ret.h>
 
 #include <rmw/impl/cpp/macros.hpp>
 
@@ -2055,13 +2056,24 @@ rmw_get_topic_names_and_types(
 	size_t i = 0;
     for (auto it : topics) {
       topic_names_and_types->names.data[i] = rcutils_strdup(it.first.c_str(), *allocator);
-      topic_names_and_types->types->data[i] = rcutils_strdup(it.second.c_str(), *allocator);
+	  if (!topic_names_and_types->names.data[i]) {
+		  RMW_SET_ERROR_MSG("failed to allocate memory for topic name")
+			  goto fail;
+	  }
+	  rcutils_ret_t rcutils_ret = rcutils_string_array_init(
+		  &topic_names_and_types->types[i],
+		  it.second.size(),
+		  allocator);
+
+	  if (rcutils_ret != RCUTILS_RET_OK) {
+		  RMW_SET_ERROR_MSG(rcutils_get_error_string_safe())
+			  goto fail;
+	  }
+
+      topic_names_and_types->types[i].data[0] = rcutils_strdup(it.second.c_str(), *allocator);
      
-      if (!topic_names_and_types->names.data[i]) {
-        RMW_SET_ERROR_MSG("failed to allocate memory for topic name")
-        goto fail;
-      }
-      if (!topic_names_and_types->types->data[i]) {
+      
+      if (!topic_names_and_types->types[i].data[0]) {
         rmw_free(topic_names_and_types->names.data[i]);
         RMW_SET_ERROR_MSG("failed to allocate memory for type name")
         goto fail;
