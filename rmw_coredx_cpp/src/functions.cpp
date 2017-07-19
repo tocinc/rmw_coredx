@@ -36,6 +36,9 @@
 #include <rmw/error_handling.h>
 #include <rmw/types.h>
 #include <rmw/sanity_checks.h>
+#include <rmw/names_and_types.h>
+#include <rcutils/strdup.h>
+#include <rmw/convert_rcutils_ret_to_rmw_ret.h>
 
 #include <rmw/impl/cpp/macros.hpp>
 
@@ -286,7 +289,8 @@ rmw_init ()
 rmw_node_t *
 rmw_create_node( const char    * name,
                  const char    * namespace_,
-                 size_t          domain_id )
+                 size_t          domain_id, 
+	             const rmw_node_security_options_t * security_options )
 {
   DDS::DomainParticipantFactory * dpf_ = DDS::DomainParticipantFactory::get_instance();
   if (!dpf_) {
@@ -1973,8 +1977,11 @@ rmw_destroy_waitset(rmw_waitset_t * waitset)
 /* ************************************************
  */
 rmw_ret_t
-rmw_get_topic_names_and_types( const rmw_node_t            * node,
-                               rmw_topic_names_and_types_t * topic_names_and_types )
+rmw_get_topic_names_and_types(
+	const rmw_node_t * node,
+	rcutils_allocator_t * allocator,
+	bool no_demangle,
+	rmw_names_and_types_t * topic_names_and_types)
 {
   if (!node) {
     RMW_SET_ERROR_MSG("node handle is null");
@@ -1984,23 +1991,13 @@ rmw_get_topic_names_and_types( const rmw_node_t            * node,
     RMW_SET_ERROR_MSG("node handle is not from this rmw implementation");
     return RMW_RET_ERROR;
   }
-  if (!topic_names_and_types) {
-    RMW_SET_ERROR_MSG("topics handle is null");
-    return RMW_RET_ERROR;
-  }
-  if (topic_names_and_types->topic_count) {
-    RMW_SET_ERROR_MSG("topic count is not zero");
-    return RMW_RET_ERROR;
-  }
-  if (topic_names_and_types->topic_names) {
-    RMW_SET_ERROR_MSG("topic names is not null");
-    return RMW_RET_ERROR;
-  }
-  if (topic_names_and_types->type_names) {
-    RMW_SET_ERROR_MSG("type names is not null");
-    return RMW_RET_ERROR;
-  }
 
+  if (rmw_names_and_types_check_zero(topic_names_and_types) != RMW_RET_OK)
+  {
+    RMW_SET_ERROR_MSG("topic names and types is initialized");
+    return RMW_RET_ERROR;
+  }
+  
   auto node_info = static_cast<CoreDXNodeInfo *>(node->data);
   if (!node_info) {
     RMW_SET_ERROR_MSG("node info handle is null");
@@ -2050,72 +2047,80 @@ rmw_get_topic_names_and_types( const rmw_node_t            * node,
 
   // copy data into result handle
   if (topics.size() > 0) {
-    topic_names_and_types->topic_names = static_cast<char **>(
-      rmw_allocate(sizeof(char *) * topics.size()));
-    if (!topic_names_and_types->topic_names) {
-      RMW_SET_ERROR_MSG("failed to allocate memory for topic names")
+	rmw_ret_t ret = rmw_names_and_types_init(topic_names_and_types, sizeof(char *) * topics.size(), allocator);
+    if (ret != RMW_RET_OK) {
+      RMW_SET_ERROR_MSG("failed to allocate memory for topic names and types")
       return RMW_RET_ERROR;
     }
-    topic_names_and_types->type_names = static_cast<char **>(
-      rmw_allocate(sizeof(char *) * topics.size()));
-    if (!topic_names_and_types->type_names) {
-      rmw_free(topic_names_and_types->topic_names);
-      RMW_SET_ERROR_MSG("failed to allocate memory for type names")
-      return RMW_RET_ERROR;
-    }
+
+	size_t i = 0;
     for (auto it : topics) {
-      char * topic_name = strdup(it.first.c_str());
-      if (!topic_name) {
-        RMW_SET_ERROR_MSG("failed to allocate memory for topic name")
-        goto fail;
-      }
-      char * type_name = strdup(it.second.c_str());
-      if (!type_name) {
-        rmw_free(topic_name);
+      topic_names_and_types->names.data[i] = rcutils_strdup(it.first.c_str(), *allocator);
+	  if (!topic_names_and_types->names.data[i]) {
+		  RMW_SET_ERROR_MSG("failed to allocate memory for topic name")
+			  goto fail;
+	  }
+	  rcutils_ret_t rcutils_ret = rcutils_string_array_init(
+		  &topic_names_and_types->types[i],
+		  it.second.size(),
+		  allocator);
+
+	  if (rcutils_ret != RCUTILS_RET_OK) {
+		  RMW_SET_ERROR_MSG(rcutils_get_error_string_safe())
+			  goto fail;
+	  }
+
+      topic_names_and_types->types[i].data[0] = rcutils_strdup(it.second.c_str(), *allocator);
+     
+      
+      if (!topic_names_and_types->types[i].data[0]) {
+        rmw_free(topic_names_and_types->names.data[i]);
         RMW_SET_ERROR_MSG("failed to allocate memory for type name")
         goto fail;
       }
-      size_t i = topic_names_and_types->topic_count;
-      topic_names_and_types->topic_names[i] = topic_name;
-      topic_names_and_types->type_names[i] = type_name;
-      ++topic_names_and_types->topic_count;
+      ++i;
     }
   }
 
   return RMW_RET_OK;
 fail:
-  rmw_ret_t ret = rmw_destroy_topic_names_and_types(topic_names_and_types);
+  rmw_ret_t ret = rmw_names_and_types_fini(topic_names_and_types);
   (void)ret;
   return RMW_RET_ERROR;
 }
 
 /* ************************************************
- */
+*/
 rmw_ret_t
-rmw_destroy_topic_names_and_types( rmw_topic_names_and_types_t * topic_names_and_types )
+rmw_get_service_names_and_types(
+	    const rmw_node_t * node,
+		rcutils_allocator_t * allocator,
+		rmw_names_and_types_t * service_names_and_types)
 {
-  if (!topic_names_and_types) {
-    RMW_SET_ERROR_MSG("topics handle is null");
-    return RMW_RET_ERROR;
-  }
-  if (topic_names_and_types->topic_count) {
-    for (size_t i = 0; i < topic_names_and_types->topic_count; ++i) {
-      delete topic_names_and_types->topic_names[i];
-      delete topic_names_and_types->type_names[i];
-      topic_names_and_types->topic_names[i] = nullptr;
-      topic_names_and_types->type_names[i] = nullptr;
-    }
-    if (topic_names_and_types->topic_names) {
-      rmw_free(topic_names_and_types->topic_names);
-      topic_names_and_types->topic_names = nullptr;
-    }
-    if (topic_names_and_types->type_names) {
-      rmw_free(topic_names_and_types->type_names);
-      topic_names_and_types->type_names = nullptr;
-    }
-    topic_names_and_types->topic_count = 0;
-  }
-  return RMW_RET_OK;
+	if (!node) {
+		RMW_SET_ERROR_MSG("node handle is null");
+		return RMW_RET_ERROR;
+	}
+	if (node->implementation_identifier != toc_coredx_identifier) {
+		RMW_SET_ERROR_MSG("node handle is not from this rmw implementation");
+		return RMW_RET_ERROR;
+	}
+
+	if (rmw_names_and_types_check_zero(service_names_and_types) != RMW_RET_OK)
+	{
+		RMW_SET_ERROR_MSG("service names and types is initialized");
+		return RMW_RET_ERROR;
+	}
+
+	auto node_info = static_cast<CoreDXNodeInfo *>(node->data);
+	if (!node_info) {
+		RMW_SET_ERROR_MSG("node info handle is null");
+		return RMW_RET_ERROR;
+	}
+	
+	RMW_SET_ERROR_MSG("get service names and types is not implemented!");
+
+	return RMW_RET_ERROR;
 }
 
 /* ************************************************
