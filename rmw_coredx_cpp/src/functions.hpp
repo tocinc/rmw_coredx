@@ -124,7 +124,7 @@ struct CoreDXStaticServiceInfo
 
 struct CoreDXWaitSetInfo
 {
-  DDS::WaitSet      * waitset;
+  DDS::WaitSet      * wait_set;
   DDS::ConditionSeq   active_conditions;
   DDS::ConditionSeq   attached_conditions;
 };
@@ -216,33 +216,33 @@ wait(const char * implementation_identifier,
      rmw_guard_conditions_t  * guard_conditions,
      rmw_services_t          * services,
      rmw_clients_t           * clients,
-     rmw_waitset_t           * ros_waitset,
+     rmw_wait_set_t          * ros_wait_set,
      const rmw_time_t              * wait_timeout)
 {
-  if (!ros_waitset) {
-    RMW_SET_ERROR_MSG("waitset handle is null");
+  if (!ros_wait_set) {
+    RMW_SET_ERROR_MSG("wait set handle is null");
     return RMW_RET_ERROR;
   }
   
   RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
-    ros_waitset,
-    ros_waitset->implementation_identifier, implementation_identifier,
+    ros_wait_set,
+    ros_wait_set->implementation_identifier, implementation_identifier,
     return RMW_RET_ERROR);
 
-  CoreDXWaitSetInfo * waitset_info = static_cast<CoreDXWaitSetInfo *>(ros_waitset->data);
-  if (!waitset_info) {
-    RMW_SET_ERROR_MSG("WaitSet implementation struct is null");
+  CoreDXWaitSetInfo * wait_set_info = static_cast<CoreDXWaitSetInfo *>(ros_wait_set->data);
+  if (!wait_set_info) {
+    RMW_SET_ERROR_MSG("Wait set implementation struct is null");
     return RMW_RET_ERROR;
   }
 
-  DDS::WaitSet * dds_waitset = static_cast<DDS::WaitSet *>(waitset_info->waitset);
-  if (!dds_waitset) {
-    RMW_SET_ERROR_MSG("DDS waitset handle is null");
+  DDS::WaitSet * dds_wait_set = static_cast<DDS::WaitSet *>(wait_set_info->wait_set);
+  if (!dds_wait_set) {
+    RMW_SET_ERROR_MSG("DDS wait set handle is null");
     return RMW_RET_ERROR;
   }
 
   DDS::ConditionSeq active_conditions =
-    static_cast<DDS::ConditionSeq>(waitset_info->active_conditions);
+    static_cast<DDS::ConditionSeq>(wait_set_info->active_conditions);
   
   // add a condition for each subscriber
   for (size_t i = 0; i < subscriptions->subscriber_count; ++i) {
@@ -260,12 +260,12 @@ wait(const char * implementation_identifier,
 
 #if (DO_DEBUG)
     /* DEBUG -- */
-    fprintf(stderr, "waitset.attach( read_cond: %p topic: %s)\n", read_condition,
+    fprintf(stderr, "wait_set.attach( read_cond: %p topic: %s)\n", read_condition,
             subscriber_info->topic_reader_->get_topicdescription()->get_name());
 #endif
 
     rmw_ret_t rmw_status = check_attach_condition_error(
-      dds_waitset->attach_condition(*read_condition));
+      dds_wait_set->attach_condition(*read_condition));
     if (rmw_status != RMW_RET_OK) {
       return rmw_status;
     }
@@ -281,10 +281,10 @@ wait(const char * implementation_identifier,
     }
 #if (DO_DEBUG)
     /* DEBUG -- */
-    fprintf(stderr, "waitset.attach( guard_condition: %p )\n", guard_condition);
+    fprintf(stderr, "wait_set.attach( guard_condition: %p )\n", guard_condition);
 #endif
     rmw_ret_t rmw_status = check_attach_condition_error(
-      dds_waitset->attach_condition(*guard_condition));
+      dds_wait_set->attach_condition(*guard_condition));
     if (rmw_status != RMW_RET_OK) {
       return rmw_status;
     }
@@ -311,10 +311,10 @@ wait(const char * implementation_identifier,
     }
 #if (DO_DEBUG)
     /* DEBUG -- */
-    fprintf(stderr, "waitset.attach( req status_cond: %p )\n", condition);
+    fprintf(stderr, "wait_set.attach( req status_cond: %p )\n", condition);
 #endif
     rmw_ret_t rmw_status = check_attach_condition_error(
-      dds_waitset->attach_condition(condition));
+      dds_wait_set->attach_condition(condition));
     if (rmw_status != RMW_RET_OK) {
       return rmw_status;
     }
@@ -341,10 +341,10 @@ wait(const char * implementation_identifier,
     }
 #if (DO_DEBUG)
     /* DEBUG -- */
-    fprintf(stderr, "waitset.attach( rep status_cond: %p )\n", condition);
+    fprintf(stderr, "wait_set.attach( rep status_cond: %p )\n", condition);
 #endif
     rmw_ret_t rmw_status = check_attach_condition_error(
-      dds_waitset->attach_condition(condition));
+      dds_wait_set->attach_condition(condition));
     if (rmw_status != RMW_RET_OK) {
       return rmw_status;
     }
@@ -360,14 +360,14 @@ wait(const char * implementation_identifier,
     timeout.nanosec = static_cast<int32_t>(wait_timeout->nsec);
   }
 
-  DDS::ReturnCode_t status = dds_waitset->wait(active_conditions, timeout);
+  DDS::ReturnCode_t status = dds_wait_set->wait(active_conditions, timeout);
 
   if (status == DDS::RETCODE_TIMEOUT) {
     return RMW_RET_TIMEOUT;
   }
 
   if (status != DDS::RETCODE_OK) {
-    RMW_SET_ERROR_MSG("failed to wait on waitset");
+    RMW_SET_ERROR_MSG("failed to wait on wait set");
     return RMW_RET_ERROR;
   }
 
@@ -400,11 +400,11 @@ wait(const char * implementation_identifier,
 #if (DO_DEBUG)
     /* DEBUG -- */
     else
-      fprintf(stderr, "waitset: active: read_cond: %p\n", read_condition);
+      fprintf(stderr, "wait set: active: read_cond: %p\n", read_condition);
 #endif
-    DDS_ReturnCode_t retcode = dds_waitset->detach_condition(*read_condition);
+    DDS_ReturnCode_t retcode = dds_wait_set->detach_condition(*read_condition);
     if (retcode != DDS_RETCODE_OK) {
-      RMW_SET_ERROR_MSG("Failed to get detach condition from waitset");
+      RMW_SET_ERROR_MSG("Failed to get detach condition from wait set");
     }
   }
 
@@ -425,7 +425,7 @@ wait(const char * implementation_identifier,
           if (active_conditions[j] == guard_condition) {
 #if (DO_DEBUG)
             /* DEBUG -- */
-            fprintf(stderr, "waitset: active: guard_cond: %p (clearing it)\n", guard_condition);
+            fprintf(stderr, "wait set: active: guard_cond: %p (clearing it)\n", guard_condition);
 #endif
             guard_condition->set_trigger_value(0);
             break;
@@ -437,9 +437,9 @@ wait(const char * implementation_identifier,
         if (!(j < active_conditions.size())) {
           guard_conditions->guard_conditions[i] = 0;
         } 
-        DDS_ReturnCode_t retcode = dds_waitset->detach_condition(*guard_condition);
+        DDS_ReturnCode_t retcode = dds_wait_set->detach_condition(*guard_condition);
         if (retcode != DDS_RETCODE_OK) {
-          RMW_SET_ERROR_MSG("Failed to get detach condition from waitset");
+          RMW_SET_ERROR_MSG("Failed to get detach condition from wait set");
         }
       }
     }
@@ -474,11 +474,11 @@ wait(const char * implementation_identifier,
 #if (DO_DEBUG)
     /* DEBUG -- */
     else
-      fprintf(stderr, "waitset: active: req status_cond: %p\n", condition);
+      fprintf(stderr, "wait set: active: req status_cond: %p\n", condition);
 #endif
-    DDS_ReturnCode_t retcode = dds_waitset->detach_condition(*condition);
+    DDS_ReturnCode_t retcode = dds_wait_set->detach_condition(*condition);
     if (retcode != DDS_RETCODE_OK) {
-      RMW_SET_ERROR_MSG("Failed to get detach condition from waitset");
+      RMW_SET_ERROR_MSG("Failed to get detach condition from wait set");
     }
   }
 
@@ -513,16 +513,16 @@ wait(const char * implementation_identifier,
     /* DEBUG -- */
     else
       {
-        fprintf(stderr, "waitset: active: rep status_cond: %p (flag: %s) (enabled: 0x%0x) (status: 0x%0x)\n",
+        fprintf(stderr, "wait set: active: rep status_cond: %p (flag: %s) (enabled: 0x%0x) (status: 0x%0x)\n",
                 condition,
                 condition->get_trigger_value()?"set":"clear",
                 condition->get_enabled_statuses(),
                 response_datareader->get_status_changes());
       }
 #endif
-    DDS_ReturnCode_t retcode = dds_waitset->detach_condition(*condition);
+    DDS_ReturnCode_t retcode = dds_wait_set->detach_condition(*condition);
     if (retcode != DDS_RETCODE_OK) {
-      RMW_SET_ERROR_MSG("Failed to get detach condition from waitset");
+      RMW_SET_ERROR_MSG("Failed to get detach condition from wait set");
     }
   }
   return RMW_RET_OK;
