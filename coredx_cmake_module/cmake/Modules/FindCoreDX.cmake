@@ -45,7 +45,10 @@
 ###############################################################################
 
 # lint_cmake: -convention/filename, -package/stdargs
-#message("READING coredx_cmake_modules/cmake/Modules/FindCoreDX.cmake....")
+
+if(DEFINED CoreDX_FOUND)
+  return()
+endif()
 
 set(CoreDX_FOUND FALSE)
 
@@ -90,7 +93,7 @@ file(TO_CMAKE_PATH "$ENV{COREDX_HOST}"   _COREDX_HOST)
 
 if(NOT "${_COREDX_TOP} " STREQUAL " ")
   # look inside of COREDX_HOME if defined
-  message(STATUS "Found CoreDX DDS: ${_COREDX_TOP}")
+  message(STATUS "Found TOC CoreDX DDS: ${_COREDX_TOP}")
   set(CoreDX_HOME "${_COREDX_TOP}")
   set(CoreDX_INCLUDE_DIRS "${_COREDX_TOP}/target/include")
 
@@ -157,9 +160,10 @@ if(CoreDX_FOUND AND NOT WIN32)
       "${CMAKE_CURRENT_BINARY_DIR}/coredx_cmake_module/check_abi"
       check_abi exe)
 
-    message(STATUS "compile result: ${CoreDX_GLIBCXX_USE_CXX11_ABI_ZERO}" )
     if(CoreDX_GLIBCXX_USE_CXX11_ABI_ZERO)
       message(STATUS "CoreDX DDS distribution needs _GLIBCXX_USE_CXX11_ABI=0")
+    else()
+      message(STATUS "CoreDX DDS distribution does not need _GLIBCXX_USE_CXX11_ABI=0")
     endif()
   endif()
 

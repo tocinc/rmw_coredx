@@ -1882,7 +1882,7 @@ rmw_wait( rmw_subscriptions_t    * subscriptions,
           rmw_guard_conditions_t * guard_conditions,
           rmw_services_t         * services,
           rmw_clients_t          * clients,
-          rmw_waitset_t          * waitset,
+          rmw_wait_set_t          * waitset,
           const rmw_time_t             * wait_timeout )
 {
   return wait<CoreDXStaticSubscriberInfo, CoreDXStaticServiceInfo, CoreDXStaticClientInfo>
@@ -1891,10 +1891,10 @@ rmw_wait( rmw_subscriptions_t    * subscriptions,
 
 /* ************************************************
  */
-rmw_waitset_t *
-rmw_create_waitset(size_t max_conditions)
+rmw_wait_set_t *
+rmw_create_wait_set(size_t max_conditions)
 {
-  rmw_waitset_t     * waitset = rmw_waitset_allocate();
+  rmw_wait_set_t    * waitset = rmw_wait_set_allocate();
   CoreDXWaitSetInfo * waitset_info = nullptr;
 
   // From here onward, error results in unrolling in the goto fail block.
@@ -1911,13 +1911,13 @@ rmw_create_waitset(size_t max_conditions)
     goto fail;
   }
 
-  waitset_info->waitset = static_cast<DDS::WaitSet *>(rmw_allocate(sizeof(DDS::WaitSet)));
-  if (!waitset_info->waitset) {
+  waitset_info->wait_set = static_cast<DDS::WaitSet *>(rmw_allocate(sizeof(DDS::WaitSet)));
+  if (!waitset_info->wait_set) {
     RMW_SET_ERROR_MSG("failed to allocate waitset");
     goto fail;
   }
 
-  RMW_TRY_PLACEMENT_NEW( waitset_info->waitset, waitset_info->waitset, goto fail, DDS::WaitSet, )
+  RMW_TRY_PLACEMENT_NEW( waitset_info->wait_set, waitset_info->wait_set, goto fail, DDS::WaitSet, )
 
   // If max_conditions is greater than zero, re-allocate both ConditionSeqs to max_conditions
   if (max_conditions > 0) {
@@ -1929,9 +1929,9 @@ rmw_create_waitset(size_t max_conditions)
 
 fail:
   if (waitset_info) {
-    if (waitset_info->waitset) {
-      RMW_TRY_DESTRUCTOR_FROM_WITHIN_FAILURE(waitset_info->waitset->~WaitSet(), DDS::WaitSet)
-      rmw_free(waitset_info->waitset);
+    if (waitset_info->wait_set) {
+      RMW_TRY_DESTRUCTOR_FROM_WITHIN_FAILURE(waitset_info->wait_set->~WaitSet(), DDS::WaitSet)
+      rmw_free(waitset_info->wait_set);
     }
     waitset_info = nullptr;
   }
@@ -1939,7 +1939,7 @@ fail:
     if (waitset->data) {
       rmw_free(waitset->data);
     }
-    rmw_waitset_free(waitset);
+    rmw_wait_set_free(waitset);
   }
   return nullptr;
 }
@@ -1947,7 +1947,7 @@ fail:
 /* ************************************************
  */
 rmw_ret_t
-rmw_destroy_waitset(rmw_waitset_t * waitset)
+rmw_destroy_wait_set(rmw_wait_set_t * waitset)
 {
   if (!waitset) {
     RMW_SET_ERROR_MSG("waitset handle is null");
@@ -1960,9 +1960,9 @@ rmw_destroy_waitset(rmw_waitset_t * waitset)
   // Explicitly call destructor since the "placement new" was used
   waitset_info->active_conditions.clear();
   waitset_info->attached_conditions.clear();
-  if (waitset_info->waitset) {
-    RMW_TRY_DESTRUCTOR(waitset_info->waitset->~WaitSet(), WaitSet, result = RMW_RET_ERROR)
-    rmw_free(waitset_info->waitset);
+  if (waitset_info->wait_set) {
+    RMW_TRY_DESTRUCTOR(waitset_info->wait_set->~WaitSet(), WaitSet, result = RMW_RET_ERROR)
+    rmw_free(waitset_info->wait_set);
   }
   waitset_info = nullptr;
   if (waitset->data) {
@@ -1970,7 +1970,7 @@ rmw_destroy_waitset(rmw_waitset_t * waitset)
     waitset->data = nullptr;
   }
   if (waitset) {
-    rmw_waitset_free(waitset);
+    rmw_wait_set_free(waitset);
   }
   return result;
 }

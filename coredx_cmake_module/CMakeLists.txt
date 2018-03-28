@@ -17,8 +17,6 @@ cmake_minimum_required(VERSION 3.5)
 
 project(coredx_cmake_module)
 
-#message("Reading coredx_cmake_module/CMakeLists.txt....")
-
 find_package(ament_cmake REQUIRED)
 
 set(${PROJECT_NAME}_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cmake")

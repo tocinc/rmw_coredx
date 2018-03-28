@@ -32,10 +32,12 @@ def main(argv=sys.argv[1:]):
     args = parser.parse_args(argv)
 
     generator_args = read_generator_arguments(args.generator_arguments_file)
-    print("read arg_file ( " + args.generator_arguments_file + " ) : ")
-    pprint.pprint(generator_args, width=2)
-    for dds_idl_file in generator_args.get('additional_files', []):
-        print("file '" + dds_idl_file + " " + ("does" if os.path.exists(dds_idl_file) else "does not") + " exist")
+
+    #print("read arg_file ( " + args.generator_arguments_file + " ) : ")
+    #pprint.pprint(generator_args, width=2)
+    #for dds_idl_file in generator_args.get('additional_files', []):
+    #    print("file '" + dds_idl_file + " " + ("does" if os.path.exists(dds_idl_file) else "does not") + " exist")
+
     message_specs, service_specs = parse_ros_interface_files(
         generator_args['package_name'], generator_args['ros_interface_files'])
 

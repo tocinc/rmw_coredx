@@ -19,6 +19,12 @@
 
 int main(int, char **)
 {
+  DDSDomainParticipantFactory * dpf = DDSDomainParticipantFactory::get_instance();
+  DDS::DomainParticipantQos qos;
+  dpf->get_default_participant_qos( &qos );
+  DDSDomainParticipant * p =
+    dpf->create_participant(1, &qos, NULL, DDS::STATUS_MASK_NONE);
+
   DDS::rpc::RequesterParams params;
   params.service_name("foo");
   return 0;

@@ -15,7 +15,7 @@
 #ifndef ROSIDL_TYPESUPPORT_COREDX_CPP__SERVICE_TYPE_SUPPORT_DECL_HPP_
 #define ROSIDL_TYPESUPPORT_COREDX_CPP__SERVICE_TYPE_SUPPORT_DECL_HPP_
 
-#include <rosidl_generator_c/service_type_support.h>
+#include <rosidl_generator_c/service_type_support_struct.h>
 #include <rosidl_typesupport_coredx_cpp/visibility_control.h>
 
 namespace rosidl_typesupport_coredx_cpp

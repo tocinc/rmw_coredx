@@ -99,7 +99,9 @@ convert_ros_message_to_dds(
 
 @[      if field.type.type == 'string']@
     for (size_t i = 0; i < dds_message.@(field.name)_.length(); i++) {
+@[        if field.type.string_upper_bound == 0]@
       DDS::String_free(dds_message.@(field.name)_[static_cast<int32_t>(i)]);
+@[        end if]@
     }
 @[      end if]@
       
@@ -110,8 +112,20 @@ convert_ros_message_to_dds(
 @[    end if]@
     for (size_t i = 0; i < size; i++) {
 @[    if field.type.type == 'string']@
+@[      if field.type.string_upper_bound]@
+@[        if field.type.array_size and not field.type.is_upper_bound]@
+      strncpy(dds_message.@(field.name)_[static_cast<int32_t>(i)],
+              ros_message.@(field.name)[i].c_str(),
+              @(field.type.string_upper_bound));
+@[        else]@
+      strncpy(dds_message.@(field.name)_[static_cast<int32_t>(i)].value,
+              ros_message.@(field.name)[i].c_str(),
+              @(field.type.string_upper_bound));
+@[        end if]@
+@[      else]@
       dds_message.@(field.name)_[static_cast<int32_t>(i)] =
         DDS::String_dup(ros_message.@(field.name)[i].c_str());
+@[      end if]@
 @[    elif field.type.is_primitive_type()]@
       dds_message.@(field.name)_[static_cast<int32_t>(i)] =
         ros_message.@(field.name)[i];
@@ -127,9 +141,15 @@ convert_ros_message_to_dds(
     }
   }
 @[  elif field.type.type == 'string']@
+@[    if field.type.string_upper_bound]@
+  strncpy(dds_message.@(field.name)_,
+          ros_message.@(field.name).c_str(),
+          @(field.type.string_upper_bound));
+@[    else]@
   DDS::String_free(dds_message.@(field.name)_);
   dds_message.@(field.name)_ =
     DDS::String_dup(ros_message.@(field.name).c_str());
+@[    end if]@
 @[  elif field.type.is_primitive_type()]@
   dds_message.@(field.name)_ =
     ros_message.@(field.name);
@@ -194,7 +214,17 @@ convert_dds_message_to_ros(
     ros_message.@(field.name).resize(size);
 @[    end if]@
     for (size_t i = 0; i < size; i++) {
-@[    if field.type.is_primitive_type()]@
+@[    if field.type.type == 'string' and field.type.string_upper_bound]@
+@[      if field.type.array_size and not field.type.is_upper_bound]@
+  // array of bounded strings
+      ros_message.@(field.name)[i] =
+        dds_message.@(field.name)_[static_cast<int32_t>(i)];
+@[      else]@
+  // sequence of bounded strings
+      ros_message.@(field.name)[i] =
+        dds_message.@(field.name)_[static_cast<int32_t>(i)].value;
+@[      end if]@
+@[    elif field.type.is_primitive_type()]@
       ros_message.@(field.name)[i] =
         dds_message.@(field.name)_[static_cast<int32_t>(i)]@(' != 0' if field.type.type == 'bool' else '');
 @[    else]@

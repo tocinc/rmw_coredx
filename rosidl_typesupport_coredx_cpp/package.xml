@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>rosidl_typesupport_coredx_cpp</name>
-  <version>0.0.0</version>
+  <version>0.4.0</version>
   <description>Generate the C++ interfaces for TOC CoreDX DDS.</description>
   <maintainer email="ctucker@twinoakscomputing.com">Clark Tucker</maintainer>
   <license>Apache License 2.0</license>
@@ -22,6 +22,7 @@
   <build_export_depend>rmw</build_export_depend>
 
   <exec_depend>rosidl_parser</exec_depend>
+  <exec_depend>rosidl_typesupport_interface</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

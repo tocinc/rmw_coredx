@@ -212,7 +212,17 @@ convert_ros_to_dds(const void * untyped_ros_message, void * untyped_dds_message)
         fprintf(stderr, "string not null-terminated\n");
         return false;
       }
+@[      if field.type.string_upper_bound]@
+@[        if field.type.array_size and not field.type.is_upper_bound]@
+      strncpy(dds_message->@(field.name)_[static_cast<int32_t>(i)], str->data, @(field.type.string_upper_bound)); // array of bounded strings
+      dds_message->@(field.name)_[static_cast<int32_t>(i)][static_cast<int32_t>(@(field.type.string_upper_bound))] = '\0';
+@[        else]@
+      strncpy(dds_message->@(field.name)_[static_cast<int32_t>(i)].value, str->data, @(field.type.string_upper_bound)); // sequence of bounded string
+      dds_message->@(field.name)_[static_cast<int32_t>(i)].value[static_cast<int32_t>(@(field.type.string_upper_bound))] = '\0';
+@[        end if]@
+@[      else]@
       dds_message->@(field.name)_[static_cast<int32_t>(i)] = DDS::String_dup(str->data);
+@[      end if]@
 @[    elif field.type.type == 'bool']@
       dds_message->@(field.name)_[i] = 1 ? ros_i : 0;
 @[    elif field.type.is_primitive_type()]@
@@ -235,7 +245,12 @@ convert_ros_to_dds(const void * untyped_ros_message, void * untyped_dds_message)
       fprintf(stderr, "string not null-terminated\n");
       return false;
     }
+@[    if field.type.string_upper_bound]@
+    strncpy(dds_message->@(field.name)_, str->data, @(field.type.string_upper_bound)); // bounded string
+    dds_message->@(field.name)_[static_cast<int32_t>(@(field.type.string_upper_bound))] = '\0';
+@[    else]@
     dds_message->@(field.name)_ = DDS::String_dup(str->data);
+@[    end if]@
 @[  elif field.type.is_primitive_type()]@
     dds_message->@(field.name)_ = ros_message->@(field.name);
 @[  else]@
@@ -366,12 +381,32 @@ else:
 @[    if field.type.type == 'bool']@
       ros_i = (dds_message->@(field.name)_[i] != 0);
 @[    elif field.type.type == 'string']@
+@[      if field.type.string_upper_bound ]@
+@[        if field.type.array_size and not field.type.is_upper_bound]@
+  // array of bounded strings
       if (!ros_i.data) {
         rosidl_generator_c__String__init(&ros_i);
       }
       bool succeeded = rosidl_generator_c__String__assign(
         &ros_i,
         dds_message->@(field.name)_[i]);
+@[        else]@
+  // sequence of bounded strings
+      if (!ros_i.data) {
+        rosidl_generator_c__String__init(&ros_i);
+      }
+      bool succeeded = rosidl_generator_c__String__assign(
+        &ros_i,
+        dds_message->@(field.name)_[i].value);
+@[        end if]@
+@[      else ]@
+      if (!ros_i.data) {
+        rosidl_generator_c__String__init(&ros_i);
+      }
+      bool succeeded = rosidl_generator_c__String__assign(
+        &ros_i,
+        dds_message->@(field.name)_[i]);
+@[      end if]@
       if (!succeeded) {
         fprintf(stderr, "failed to assign string into field '@(field.name)'\n");
         return false;
@@ -390,9 +425,15 @@ else:
     if (!ros_message->@(field.name).data) {
       rosidl_generator_c__String__init(&ros_message->@(field.name));
     }
+@[    if field.type.string_upper_bound ]@
+    bool succeeded = rosidl_generator_c__String__assign(
+      &ros_message->@(field.name),
+      &dds_message->@(field.name)_[0]);
+@[    else ]@
     bool succeeded = rosidl_generator_c__String__assign(
       &ros_message->@(field.name),
       dds_message->@(field.name)_);
+@[    end if]@
     if (!succeeded) {
       fprintf(stderr, "failed to assign string into field '@(field.name)'\n");
       return false;
