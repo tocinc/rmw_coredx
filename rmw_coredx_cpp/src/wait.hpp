@@ -1,5 +1,5 @@
 // Copyright 2015 Twin Oaks Computing, Inc.
-// Modifications copyright (C) 2017 Twin Oaks Computing, Inc.
+// Modifications copyright (C) 2017-2018 Twin Oaks Computing, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,201 +13,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// *INDENT-OFF*
+#ifdef CoreDX_GLIBCXX_USE_CXX11_ABI_ZERO
+#define _GLIBCXX_USE_CXX11_ABI 0
+#endif
 
-#include "rosidl_typesupport_coredx_cpp/message_type_support.h"
-#include "rosidl_typesupport_coredx_cpp/service_type_support.h"
+#include <rmw/rmw.h>
+#include <rmw/types.h>
+#include <rmw/allocators.h>
+#include <rmw/error_handling.h>
+#include <rmw/impl/cpp/macros.hpp>
 
-class CustomDataReaderListener
-  : public DDS::DataReaderListener
-{
-public:
-  explicit
-  CustomDataReaderListener(
-    const char * implementation_identifier,
-    rmw_guard_condition_t * graph_guard_condition)
-  : graph_guard_condition_(graph_guard_condition),
-    implementation_identifier_(implementation_identifier)
-  {}
+#include <dds/dds.hh>
+#include <dds/dds_builtinDataReader.hh>
 
-  std::map<std::string, std::multiset<std::string>> topic_names_and_types;
-  virtual void trigger_graph_guard_condition();
-
-protected:
-  virtual void add_information(const DDS::SampleInfo & sample_info,
-                               const std::string & topic_name,
-                               const std::string & type_name);
-
-  virtual void remove_information(const DDS::SampleInfo & sample_info);
-
-private:
-  struct TopicDescriptor
-  {
-    DDS::InstanceHandle_t instance_handle;
-    std::string name;
-    std::string type;
-  };
-  std::list<TopicDescriptor> topic_descriptors;
-  rmw_guard_condition_t * graph_guard_condition_;
-  const char * implementation_identifier_;
-};
-
-class CustomPublisherListener
-  : public CustomDataReaderListener
-{
-public:
-  CustomPublisherListener(
-    const char * implementation_identifier,
-    rmw_guard_condition_t * graph_guard_condition)
-  : CustomDataReaderListener(implementation_identifier, graph_guard_condition)
-  {}
-  virtual void on_data_available(DDS::DataReader * reader);
-};
-
-class CustomSubscriberListener
-  : public CustomDataReaderListener
-{
-public:
-  CustomSubscriberListener(
-    const char * implementation_identifier,
-    rmw_guard_condition_t * graph_guard_condition)
-  : CustomDataReaderListener(implementation_identifier, graph_guard_condition)
-  {}
-  virtual void on_data_available(DDS::DataReader * reader);
-};
-
-struct CoreDXNodeInfo
-{
-  DDS::DomainParticipant                 * participant;
-  CustomPublisherListener                * publisher_listener;
-  CustomSubscriberListener               * subscriber_listener;
-  rmw_guard_condition_t                  * graph_guard_condition;
-};
-
-struct CoreDXPublisherGID
-{
-  DDS::InstanceHandle_t                    publication_handle;
-};
-
-struct CoreDXStaticPublisherInfo
-{
-  DDS::Publisher                         * dds_publisher_;
-  DDS::DataWriter                        * topic_writer_;
-  const message_type_support_callbacks_t * callbacks_;
-  rmw_gid_t                                publisher_gid;
-};
-
-struct CoreDXStaticSubscriberInfo
-{
-  DDS::Subscriber                        * dds_subscriber_;
-  DDS::DataReader                        * topic_reader_;
-  DDS::ReadCondition                     * read_condition_;
-  bool                                     ignore_local_publications;
-  const message_type_support_callbacks_t * callbacks_;
-};
-
-struct CoreDXStaticClientInfo
-{
-  void                                   * requester_;
-  DDS::DataReader                        * response_datareader_;
-  DDS::ReadCondition                     * read_condition_;
-  const service_type_support_callbacks_t * callbacks_;
-};
-
-struct CoreDXStaticServiceInfo
-{
-  void                                   * replier_;
-  DDS::DataReader                        * request_datareader_;
-  DDS::ReadCondition                     * read_condition_;
-  const service_type_support_callbacks_t * callbacks_;
-};
-
-struct CoreDXWaitSetInfo
-{
-  DDS::WaitSet      * wait_set;
-  DDS::ConditionSeq   active_conditions;
-  DDS::ConditionSeq   attached_conditions;
-};
-
-
-bool  get_datareader_qos(  DDS::DomainParticipant  * participant,
-                           const rmw_qos_profile_t * qos_profile,
-                           DDS::DataReaderQos      & datareader_qos);
-
-bool  get_datawriter_qos(  DDS::DomainParticipant  * participant,
-                           const rmw_qos_profile_t * qos_profile,
-                           DDS::DataWriterQos      & datawriter_qos);
-
-rmw_ret_t check_attach_condition_error(DDS::ReturnCode_t retcode);
-
-template<typename EntityQos>
-bool set_entity_qos_from_profile(const rmw_qos_profile_t * qos_profile,
-                                 EntityQos               & entity_qos)
-{
-  // Read properties from the rmw profile
-  switch (qos_profile->history) {
-    case RMW_QOS_POLICY_HISTORY_KEEP_LAST:
-      entity_qos.history.kind = DDS::KEEP_LAST_HISTORY_QOS;
-      break;
-    case RMW_QOS_POLICY_HISTORY_KEEP_ALL:
-      entity_qos.history.kind = DDS::KEEP_ALL_HISTORY_QOS;
-      break;
-    case RMW_QOS_POLICY_HISTORY_SYSTEM_DEFAULT:
-      break;
-    default:
-      RMW_SET_ERROR_MSG("Unknown QoS history policy");
-      return false;
-  }
-
-  switch (qos_profile->reliability) {
-    case RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT:
-      entity_qos.reliability.kind = DDS::BEST_EFFORT_RELIABILITY_QOS;
-      break;
-    case RMW_QOS_POLICY_RELIABILITY_RELIABLE:
-      entity_qos.reliability.kind = DDS::RELIABLE_RELIABILITY_QOS;
-      break;
-    case RMW_QOS_POLICY_RELIABILITY_SYSTEM_DEFAULT:
-      break;
-    default:
-      RMW_SET_ERROR_MSG("Unknown QoS reliability policy");
-      return false;
-  }
-
-  switch (qos_profile->durability) {
-    case RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL:
-      entity_qos.durability.kind = DDS::TRANSIENT_LOCAL_DURABILITY_QOS;
-      break;
-    case RMW_QOS_POLICY_DURABILITY_VOLATILE:
-      entity_qos.durability.kind = DDS::VOLATILE_DURABILITY_QOS;
-      break;
-    case RMW_QOS_POLICY_DURABILITY_SYSTEM_DEFAULT:
-      break;
-    default:
-      RMW_SET_ERROR_MSG("Unknown QoS durability policy");
-      return false;
-  }
-  
-  if (qos_profile->depth != RMW_QOS_POLICY_DEPTH_SYSTEM_DEFAULT) {
-    entity_qos.history.depth = static_cast<int32_t>(qos_profile->depth);
-  }
-
-  // ensure the history depth is at least the requested queue size
-  assert(entity_qos.history.depth >= 0);
-  if (
-    entity_qos.history.kind == DDS::KEEP_LAST_HISTORY_QOS &&
-    static_cast<size_t>(entity_qos.history.depth) < qos_profile->depth
-  )
-  {
-    if (qos_profile->depth > (std::numeric_limits<int32_t>::max)()) {
-      RMW_SET_ERROR_MSG(
-        "failed to set history depth since the requested queue size exceeds the DDS type");
-      return false;
-    }
-    entity_qos.history.depth = static_cast<int32_t>(qos_profile->depth);
-  }
-  return true;
-}
-
+#include "rmw_coredx_cpp/identifier.hpp"
+#include "rmw_coredx_types.hpp"
+#include "util.hpp"
 
 template<typename SubscriberInfo, typename ServiceInfo, typename ClientInfo>
 rmw_ret_t
@@ -527,4 +348,3 @@ wait(const char * implementation_identifier,
   }
   return RMW_RET_OK;
 }
-// *INDENT-ON*

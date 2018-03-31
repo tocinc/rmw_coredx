@@ -50,6 +50,9 @@ find_package(rmw REQUIRED)
 find_package(rosidl_generator_c REQUIRED)
 find_package(rosidl_generator_cpp REQUIRED)
 
+include_directories(include)
+
+ament_export_include_directories(include)
 ament_export_dependencies(
   rcutils
   rmw
@@ -64,7 +67,45 @@ register_rmw_implementation(
   "cpp:rosidl_typesupport_cpp:rosidl_typesupport_coredx_cpp"
 )
 
-add_library(rmw_coredx_cpp SHARED src/functions.cpp)
+add_library(rmw_coredx_cpp SHARED
+  src/coredx_identifier.cpp
+  src/custom_listeners.cpp
+  src/rmw_compare_gids_equal.cpp
+  src/rmw_count_publishers.cpp
+  src/rmw_count_subscribers.cpp
+  src/rmw_create_client.cpp
+  src/rmw_create_guard_condition.cpp
+  src/rmw_create_node.cpp
+  src/rmw_create_publisher.cpp
+  src/rmw_create_service.cpp
+  src/rmw_create_subscription.cpp
+  src/rmw_create_wait_set.cpp
+  src/rmw_destroy_client.cpp
+  src/rmw_destroy_guard_condition.cpp
+  src/rmw_destroy_node.cpp
+  src/rmw_destroy_publisher.cpp
+  src/rmw_destroy_service.cpp
+  src/rmw_destroy_subscription.cpp
+  src/rmw_destroy_wait_set.cpp
+  src/rmw_get_gid_for_publisher.cpp
+  src/rmw_get_implementation_identifier.cpp
+  src/rmw_get_node_names.cpp
+  src/rmw_get_service_names_and_types.cpp
+  src/rmw_get_topic_names_and_types.cpp
+  src/rmw_init.cpp
+  src/rmw_node_get_graph_guard_condition.cpp
+  src/rmw_publish.cpp
+  src/rmw_send_request.cpp
+  src/rmw_send_response.cpp
+  src/rmw_service_server_is_available.cpp
+  src/rmw_take.cpp
+  src/rmw_take_request.cpp
+  src/rmw_take_response.cpp
+  src/rmw_take_with_info.cpp
+  src/rmw_trigger_guard_condition.cpp
+  src/rmw_wait.cpp
+  src/util.cpp
+  )
 ament_target_dependencies(rmw_coredx_cpp
   "rcutils"
   "rmw"
