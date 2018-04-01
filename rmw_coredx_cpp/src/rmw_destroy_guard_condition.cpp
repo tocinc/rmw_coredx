@@ -23,6 +23,8 @@
 #include <rmw/error_handling.h>
 #include <rmw/impl/cpp/macros.hpp>
 
+#include <rcutils/logging_macros.h>
+
 #include <dds/dds.hh>
 #include <dds/dds_builtinDataReader.hh>
 
@@ -39,6 +41,12 @@ extern "C" {
 rmw_ret_t
 rmw_destroy_guard_condition( rmw_guard_condition_t * guard_condition )
 {
+  RCUTILS_LOG_DEBUG_NAMED(
+    "rmw_coredx_cpp",
+    "%s[ guard_condition: %p ]",
+    __FUNCTION__,
+    guard_condition );
+  
   if (!guard_condition) {
     RMW_SET_ERROR_MSG("guard condition handle is null");
     return RMW_RET_ERROR;

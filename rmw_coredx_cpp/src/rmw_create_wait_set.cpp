@@ -23,6 +23,8 @@
 #include <rmw/error_handling.h>
 #include <rmw/impl/cpp/macros.hpp>
 
+#include <rcutils/logging_macros.h>
+
 #include <dds/dds.hh>
 #include <dds/dds_builtinDataReader.hh>
 
@@ -41,6 +43,11 @@ rmw_create_wait_set(size_t max_conditions)
 {
   rmw_wait_set_t    * waitset = rmw_wait_set_allocate();
   CoreDXWaitSetInfo * waitset_info = nullptr;
+  
+  RCUTILS_LOG_DEBUG_NAMED(
+    "rmw_coredx_cpp",
+    "%s[ begin ]",
+    __FUNCTION__ );
 
   // From here onward, error results in unrolling in the goto fail block.
   if (!waitset) {
@@ -70,6 +77,11 @@ rmw_create_wait_set(size_t max_conditions)
     waitset_info->attached_conditions.resize(max_conditions);
   } 
 
+  RCUTILS_LOG_DEBUG_NAMED(
+    "rmw_coredx_cpp",
+    "%s[ ret: %p ]",
+    __FUNCTION__, waitset );
+  
   return waitset;
 
 fail:
@@ -86,6 +98,10 @@ fail:
     }
     rmw_wait_set_free(waitset);
   }
+  RCUTILS_LOG_DEBUG_NAMED(
+    "rmw_coredx_cpp",
+    "%s[ FAILED ]",
+    __FUNCTION__ );
   return nullptr;
 }
   

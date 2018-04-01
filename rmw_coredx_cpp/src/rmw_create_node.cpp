@@ -248,6 +248,10 @@ fail:
   if (buf) {
     rmw_free(buf);
   }
+  RCUTILS_LOG_DEBUG_NAMED(
+    "rmw_coredx_cpp",
+    "%s[ FAILED ]",
+    __FUNCTION__ );
   return NULL;
 }
 

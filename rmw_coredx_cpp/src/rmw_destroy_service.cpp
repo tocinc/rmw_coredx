@@ -23,6 +23,8 @@
 #include <rmw/error_handling.h>
 #include <rmw/impl/cpp/macros.hpp>
 
+#include <rcutils/logging_macros.h>
+
 #include <dds/dds.hh>
 #include <dds/dds_builtinDataReader.hh>
 
@@ -40,6 +42,11 @@ rmw_ret_t
 rmw_destroy_service( rmw_node_t    * node,
                      rmw_service_t * service )
 {
+  RCUTILS_LOG_DEBUG_NAMED(
+    "rmw_coredx_cpp",
+    "%s[ node: %p service: %p ]",
+    __FUNCTION__,
+    node, service );
   if (!node) {
     RMW_SET_ERROR_MSG("node handle is null");
     return RMW_RET_ERROR;

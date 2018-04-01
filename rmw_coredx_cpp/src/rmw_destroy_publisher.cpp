@@ -23,6 +23,8 @@
 #include <rmw/error_handling.h>
 #include <rmw/impl/cpp/macros.hpp>
 
+#include <rcutils/logging_macros.h>
+
 #include <dds/dds.hh>
 #include <dds/dds_builtinDataReader.hh>
 
@@ -40,6 +42,11 @@ rmw_ret_t
 rmw_destroy_publisher( rmw_node_t      * node,
                        rmw_publisher_t * publisher)
 {
+  RCUTILS_LOG_DEBUG_NAMED(
+    "rmw_coredx_cpp",
+    "%s[ node: %p publisher: %p ]",
+    __FUNCTION__,
+    node, publisher );
   if (!node) {
     RMW_SET_ERROR_MSG("node handle is null");
     return RMW_RET_ERROR;

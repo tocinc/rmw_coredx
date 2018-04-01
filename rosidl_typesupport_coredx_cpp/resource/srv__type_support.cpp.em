@@ -45,6 +45,7 @@ void * create_requester__@(spec.srv_name)(
   const void * untyped_datareader_qos,
   const void * untyped_datawriter_qos,
   void ** untyped_reader,
+  void ** untyped_writer,
   void * (*allocator)(size_t))
 {
   using RequesterType = DDS::rpc::Requester<
@@ -74,6 +75,7 @@ void * create_requester__@(spec.srv_name)(
   }
 
   *untyped_reader = requester->get_reply_datareader();
+  *untyped_writer = requester->get_request_datawriter();
   return requester;
 }
 
@@ -121,6 +123,7 @@ void * create_replier__@(spec.srv_name)(
   const void * untyped_datareader_qos,
   const void * untyped_datawriter_qos,
   void ** untyped_reader,
+  void ** untyped_writer,
   void * (*allocator)(size_t))
 {
   using ReplierType = DDS::rpc::Replier<
@@ -150,6 +153,7 @@ void * create_replier__@(spec.srv_name)(
   }
 
   *untyped_reader = replier->get_request_datareader();
+  *untyped_writer = replier->get_reply_datawriter();
   return replier;
 }
 

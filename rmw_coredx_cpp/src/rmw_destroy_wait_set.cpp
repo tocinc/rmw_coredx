@@ -23,6 +23,8 @@
 #include <rmw/error_handling.h>
 #include <rmw/impl/cpp/macros.hpp>
 
+#include <rcutils/logging_macros.h>
+
 #include <dds/dds.hh>
 #include <dds/dds_builtinDataReader.hh>
 
@@ -39,6 +41,11 @@ extern "C" {
 rmw_ret_t
 rmw_destroy_wait_set(rmw_wait_set_t * waitset)
 {
+  RCUTILS_LOG_DEBUG_NAMED(
+    "rmw_coredx_cpp",
+    "%s[ waitset: %p ]",
+    __FUNCTION__,
+    waitset );
   if (!waitset) {
     RMW_SET_ERROR_MSG("waitset handle is null");
     return RMW_RET_ERROR;

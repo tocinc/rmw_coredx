@@ -22,6 +22,7 @@
 #include <rmw/allocators.h>
 #include <rmw/error_handling.h>
 #include <rmw/impl/cpp/macros.hpp>
+#include <rcutils/logging_macros.h>
 
 #include <dds/dds.hh>
 #include <dds/dds_builtinDataReader.hh>
@@ -29,6 +30,7 @@
 #include "rmw_coredx_cpp/identifier.hpp"
 #include "rmw_coredx_types.hpp"
 #include "util.hpp"
+#include "names.hpp"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -43,6 +45,12 @@ rmw_create_subscription( const rmw_node_t        * node,
                          const rmw_qos_profile_t * qos_policies,
                          bool                      ignore_local_publications )
 {
+  RCUTILS_LOG_DEBUG_NAMED(
+    "rmw_coredx_cpp",
+    "%s[ node: %p topic_name: '%s' ignore_local_pubs: '%s' ]",
+    __FUNCTION__,
+    node, topic_name, ignore_local_publications?"yes":"no" );
+
   if (!node) {
     RMW_SET_ERROR_MSG("node handle is null");
     return NULL;
@@ -78,6 +86,18 @@ rmw_create_subscription( const rmw_node_t        * node,
     return NULL;
   }
   std::string type_name = _create_type_name(callbacks, "msg");
+  char * topic_str     = nullptr;
+  char * partition_str = nullptr;
+  
+  if ( ! rmw_coredx_process_topic_name( topic_name,
+                                        qos_policies->avoid_ros_namespace_conventions,
+                                        &topic_str,
+                                        &partition_str ) )
+    {
+      RMW_SET_ERROR_MSG("error processing topic_name");
+      return NULL;
+    }
+  
   // Past this point, a failure results in unrolling code in the goto fail block.
   rmw_subscription_t * subscription = nullptr;
   bool registered;
@@ -110,13 +130,31 @@ rmw_create_subscription( const rmw_node_t        * node,
     goto fail;
   }
 
+  // we have to set the partition array to length 1
+  // and then set the partition_str in it
+  if ( partition_str ) {
+    if ( strlen(partition_str) != 0 ) {  // only set if not empty
+      subscriber_qos.partition.name.resize(1);
+      subscriber_qos.partition.name[0] = partition_str; // passing ownership to CoreDX
+      RCUTILS_LOG_DEBUG_NAMED(
+                              "rmw_coredx_cpp",
+                              "%s[ set partition: '%s' ]",
+                              __FUNCTION__,
+                              subscriber_qos.partition.name[0] );
+    
+    } else {
+      delete[] partition_str;
+    }
+    partition_str = nullptr;
+  }
+  
   dds_subscriber = participant->create_subscriber(subscriber_qos, NULL, 0);
   if (!dds_subscriber) {
     RMW_SET_ERROR_MSG("failed to create subscriber");
     goto fail;
   }
 
-  topic_description = participant->lookup_topicdescription(topic_name);
+  topic_description = participant->lookup_topicdescription(topic_str);
   if (!topic_description) {
     DDS::TopicQos default_topic_qos;
     status = participant->get_default_topic_qos(default_topic_qos);
@@ -126,20 +164,22 @@ rmw_create_subscription( const rmw_node_t        * node,
     }
 
     topic = participant->create_topic(
-      topic_name, type_name.c_str(), default_topic_qos, NULL, 0);
+      topic_str, type_name.c_str(), default_topic_qos, NULL, 0);
     if (!topic) {
       RMW_SET_ERROR_MSG("failed to create topic");
       goto fail;
     }
   } else {
     DDS::Duration_t timeout(0,0);
-    topic = participant->find_topic(topic_name, timeout);
+    topic = participant->find_topic(topic_str, timeout);
     if (!topic) {
       RMW_SET_ERROR_MSG("failed to find topic");
       goto fail;
     }
   }
-
+  delete[] topic_str;
+  topic_str = nullptr;
+  
   if (!get_datareader_qos(participant, qos_policies, datareader_qos)) {
     // error string was set within the function
     goto fail;
@@ -183,6 +223,12 @@ rmw_create_subscription( const rmw_node_t        * node,
     goto fail;
   }
 
+  RCUTILS_LOG_DEBUG_NAMED(
+    "rmw_coredx_cpp",
+    "%s[ node: %p ret: %p ]",
+    __FUNCTION__,
+    node, subscription );
+  
   return subscription;
 fail:
   if (subscription) {
@@ -221,6 +267,11 @@ fail:
   if (buf) {
     rmw_free(buf);
   }
+  RCUTILS_LOG_DEBUG_NAMED(
+    "rmw_coredx_cpp",
+    "%s[ FAILED ]",
+    __FUNCTION__ );
+  
   return NULL;
 }
 

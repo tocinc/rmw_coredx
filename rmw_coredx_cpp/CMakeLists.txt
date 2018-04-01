@@ -70,6 +70,7 @@ register_rmw_implementation(
 add_library(rmw_coredx_cpp SHARED
   src/coredx_identifier.cpp
   src/custom_listeners.cpp
+  src/names.cpp
   src/rmw_compare_gids_equal.cpp
   src/rmw_count_publishers.cpp
   src/rmw_count_subscribers.cpp

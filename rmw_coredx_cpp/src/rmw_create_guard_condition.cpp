@@ -23,6 +23,8 @@
 #include <rmw/error_handling.h>
 #include <rmw/impl/cpp/macros.hpp>
 
+#include <rcutils/logging_macros.h>
+
 #include <dds/dds.hh>
 #include <dds/dds_builtinDataReader.hh>
 
@@ -39,6 +41,11 @@ extern "C" {
 rmw_guard_condition_t *
 rmw_create_guard_condition( )
 {
+  RCUTILS_LOG_DEBUG_NAMED(
+    "rmw_coredx_cpp",
+    "%s[ begin ]",
+    __FUNCTION__ );
+  
   rmw_guard_condition_t * guard_condition = rmw_guard_condition_allocate();
   if (!guard_condition) {
     RMW_SET_ERROR_MSG("failed to allocate guard condition");
@@ -56,7 +63,14 @@ rmw_create_guard_condition( )
   buf = nullptr;  // Only free the dds_guard_condition pointer; don't need the buf pointer anymore.
   guard_condition->implementation_identifier = toc_coredx_identifier;
   guard_condition->data = dds_guard_condition;
+  
+  RCUTILS_LOG_DEBUG_NAMED(
+    "rmw_coredx_cpp",
+    "%s[ ret: %p ]",
+    __FUNCTION__, guard_condition );
+  
   return guard_condition;
+  
 fail:
   if (guard_condition) {
     rmw_guard_condition_free(guard_condition);
@@ -64,6 +78,10 @@ fail:
   if (buf) {
     rmw_free(buf);
   }
+  RCUTILS_LOG_DEBUG_NAMED(
+    "rmw_coredx_cpp",
+    "%s[ FAILED ]",
+    __FUNCTION__ );
   return NULL;
 }
 

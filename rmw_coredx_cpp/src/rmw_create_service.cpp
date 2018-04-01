@@ -22,6 +22,7 @@
 #include <rmw/allocators.h>
 #include <rmw/error_handling.h>
 #include <rmw/impl/cpp/macros.hpp>
+
 #include <rcutils/logging_macros.h>
 
 #include <dds/dds.hh>
@@ -30,6 +31,7 @@
 #include "rmw_coredx_cpp/identifier.hpp"
 #include "rmw_coredx_types.hpp"
 #include "util.hpp"
+#include "names.hpp"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -45,7 +47,7 @@ rmw_create_service( const rmw_node_t                    * node,
 {
   RCUTILS_LOG_DEBUG_NAMED(
     "rmw_coredx_cpp",
-    "%s[ node: '%p' service_name: '%s' ]",
+    "%s[ node: %p service_name: '%s' ]",
     __FUNCTION__,
     node, service_name );
   
@@ -84,8 +86,23 @@ rmw_create_service( const rmw_node_t                    * node,
     return NULL;
   }
 
+  char * request_partition_str = nullptr;
+  char * response_partition_str = nullptr;
+  char * service_str = nullptr;
+  if (!rmw_coredx_process_service_name(
+      service_name,
+      qos_profile->avoid_ros_namespace_conventions,
+      &service_str,
+      &request_partition_str,
+      &response_partition_str))
+  {
+    RMW_SET_ERROR_MSG("error processing service_name");
+    return NULL;
+  }
+    
   // Past this point, a failure results in unrolling code in the goto fail block.
   DDS::DataReader * request_datareader = nullptr;
+  DDS::DataWriter * reply_datawriter = nullptr;
   DDS::ReadCondition * read_condition = nullptr;
   DDS::DataReaderQos datareader_qos;
   DDS::DataWriterQos datawriter_qos;
@@ -93,6 +110,7 @@ rmw_create_service( const rmw_node_t                    * node,
   void * buf = nullptr;
   CoreDXStaticServiceInfo * service_info = nullptr;
   rmw_service_t * service = nullptr;
+  
   // Begin initializing elements.
   service = rmw_service_allocate();
   if (!service) {
@@ -111,8 +129,10 @@ rmw_create_service( const rmw_node_t                    * node,
   }
 
   replier = callbacks->create_replier(
-    participant, service_name, &datareader_qos, &datawriter_qos,
-    reinterpret_cast<void **>(&request_datareader), &rmw_allocate);
+    participant, service_str, &datareader_qos, &datawriter_qos,
+    reinterpret_cast<void **>(&request_datareader),
+    reinterpret_cast<void **>(&reply_datawriter),
+    &rmw_allocate);
   if (!replier) {
     RMW_SET_ERROR_MSG("failed to create replier");
     goto fail;
@@ -121,7 +141,53 @@ rmw_create_service( const rmw_node_t                    * node,
     RMW_SET_ERROR_MSG("data reader handle is null");
     goto fail;
   }
+  delete[] service_str;
+  service_str = nullptr;
 
+  // update partition in the service subscriber 
+  {
+    DDS::Subscriber * dds_subscriber = nullptr;
+    DDS::SubscriberQos subscriber_qos;
+    dds_subscriber = request_datareader->get_subscriber();
+    DDS::ReturnCode_t status = dds_subscriber->get_qos( subscriber_qos );
+    if (status != DDS::RETCODE_OK) {
+      RMW_SET_ERROR_MSG("failed to get default subscriber qos");
+      goto fail;
+    }
+    if (response_partition_str) {
+      if (strlen(response_partition_str) != 0) {
+        subscriber_qos.partition.name.resize( 1 );
+        subscriber_qos.partition.name[0] = response_partition_str;
+      } else {
+        delete[] response_partition_str;
+      }
+      response_partition_str = nullptr;
+    }
+    dds_subscriber->set_qos(subscriber_qos);
+  }
+
+  // update partition in the service publisher 
+  {
+    DDS::Publisher * dds_publisher = nullptr;
+    DDS::PublisherQos publisher_qos;
+    dds_publisher = reply_datawriter->get_publisher();
+    DDS::ReturnCode_t status = dds_publisher->get_qos( publisher_qos );
+    if (status != DDS_RETCODE_OK) {
+      RMW_SET_ERROR_MSG("failed to get default subscriber qos");
+      goto fail;
+    }
+    if (request_partition_str) {
+      if (strlen(request_partition_str) != 0) {
+        publisher_qos.partition.name.resize( 1 );
+        publisher_qos.partition.name[0] = request_partition_str;
+      } else {
+        delete[] request_partition_str;
+      }
+      request_partition_str = nullptr;
+    }
+    dds_publisher->set_qos(publisher_qos);
+  }
+    
   read_condition = request_datareader->create_readcondition(
      DDS::ANY_SAMPLE_STATE, DDS::ANY_VIEW_STATE, DDS::ANY_INSTANCE_STATE);
   if (!read_condition) {
@@ -148,9 +214,19 @@ rmw_create_service( const rmw_node_t                    * node,
     RMW_SET_ERROR_MSG("failed to allocate memory for node name");
     goto fail;
   }
+
+  RCUTILS_LOG_DEBUG_NAMED(
+    "rmw_coredx_cpp",
+    "%s[ node: %p ret: %p ]",
+    __FUNCTION__,
+    node, service );
   
   return service;
 fail:
+  delete[] request_partition_str;
+  delete[] response_partition_str;
+  delete[] service_str;
+  
   if (service) {
     rmw_service_free(service);
   }
@@ -179,6 +255,12 @@ fail:
   if (buf) {
     rmw_free(buf);
   }
+
+  RCUTILS_LOG_DEBUG_NAMED(
+    "rmw_coredx_cpp",
+    "%s[ FAILED ]",
+    __FUNCTION__ );
+  
   return NULL;
 }
 

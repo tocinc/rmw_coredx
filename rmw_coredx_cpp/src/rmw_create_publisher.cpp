@@ -24,6 +24,7 @@
 #include <rmw/impl/cpp/macros.hpp>
 #include <rmw/get_topic_names_and_types.h>
 #include <rmw/get_service_names_and_types.h>
+#include <rcutils/logging_macros.h>
 
 #include <dds/dds.hh>
 #include <dds/dds_builtinDataReader.hh>
@@ -31,6 +32,7 @@
 #include "rmw_coredx_cpp/identifier.hpp"
 #include "rmw_coredx_types.hpp"
 #include "util.hpp"
+#include "names.hpp"
 
 #include "rosidl_typesupport_coredx_c/identifier.h"
 #include "rosidl_typesupport_coredx_cpp/identifier.hpp"
@@ -47,6 +49,12 @@ rmw_create_publisher( const rmw_node_t        * node,
                       const char              * topic_name,
                       const rmw_qos_profile_t * qos_policies )
 {
+  RCUTILS_LOG_DEBUG_NAMED(
+    "rmw_coredx_cpp",
+    "%s[ node: %p topic_name: '%s' ]",
+    __FUNCTION__,
+    node, topic_name );
+
   if (!node) {
     RMW_SET_ERROR_MSG("node handle is null");
     return NULL;
@@ -81,7 +89,26 @@ rmw_create_publisher( const rmw_node_t        * node,
     RMW_SET_ERROR_MSG("callbacks handle is null");
     return NULL;
   }
+  
   std::string type_name = _create_type_name(callbacks, "msg");
+  char * topic_str     = nullptr;
+  char * partition_str = nullptr;
+  
+  if ( ! rmw_coredx_process_topic_name( topic_name,
+                                        qos_policies->avoid_ros_namespace_conventions,
+                                        &topic_str,
+                                        &partition_str ) )
+    {
+      RMW_SET_ERROR_MSG("error processing topic_name");
+      return NULL;
+    }
+  
+  RCUTILS_LOG_DEBUG_NAMED(
+    "rmw_coredx_cpp",
+    "%s[ topic_str: '%s' partition: '%s' ]",
+    __FUNCTION__,
+    topic_str, partition_str );
+    
   // Past this point, a failure results in unrolling code in the goto fail block.
   rmw_publisher_t * publisher = nullptr;
   bool registered;
@@ -112,7 +139,23 @@ rmw_create_publisher( const rmw_node_t        * node,
     RMW_SET_ERROR_MSG("failed to get default publisher qos");
     goto fail;
   }
-
+  
+  if ( partition_str ) {
+    if ( strlen(partition_str) != 0 ) {  // only set if not empty
+      publisher_qos.partition.name.resize(1);
+      publisher_qos.partition.name[0] = partition_str; // passing ownership to CoreDX
+      RCUTILS_LOG_DEBUG_NAMED(
+                              "rmw_coredx_cpp",
+                              "%s[ set partition: '%s' ]",
+                              __FUNCTION__,
+                              publisher_qos.partition.name[0] );
+    
+    } else {
+      delete[] partition_str;
+    }
+    partition_str = nullptr;
+  }
+  
   dds_publisher = participant->create_publisher(
     publisher_qos, NULL, 0);
   if (!dds_publisher) {
@@ -120,7 +163,7 @@ rmw_create_publisher( const rmw_node_t        * node,
     goto fail;
   }
 
-  topic_description = participant->lookup_topicdescription(topic_name);
+  topic_description = participant->lookup_topicdescription( topic_str );
   if (!topic_description) {
     DDS::TopicQos default_topic_qos;
     status = participant->get_default_topic_qos(default_topic_qos);
@@ -130,7 +173,7 @@ rmw_create_publisher( const rmw_node_t        * node,
     }
 
     topic = participant->create_topic(
-      topic_name, type_name.c_str(), default_topic_qos, NULL, 0);
+      topic_str, type_name.c_str(), default_topic_qos, NULL, 0);
     if (!topic) {
       RMW_SET_ERROR_MSG("failed to create topic");
       goto fail;
@@ -139,12 +182,14 @@ rmw_create_publisher( const rmw_node_t        * node,
     DDS::Duration_t timeout;
     timeout.sec = 0;
     timeout.nanosec = 0;
-    topic = participant->find_topic(topic_name, timeout);
+    topic = participant->find_topic(topic_str, timeout);
     if (!topic) {
       RMW_SET_ERROR_MSG("failed to find topic");
       goto fail;
     }
   }
+  delete[] topic_str;
+  topic_str = nullptr;
 
   if (!get_datawriter_qos(participant, qos_policies, datawriter_qos)) {
     // error string was set within the function
@@ -194,9 +239,18 @@ rmw_create_publisher( const rmw_node_t        * node,
 
   node_info->publisher_listener->trigger_graph_guard_condition();
   
+  RCUTILS_LOG_DEBUG_NAMED(
+    "rmw_coredx_cpp",
+    "%s[ node: %p ret: %p ]",
+    __FUNCTION__,
+    node, publisher );
+  
   return publisher;
 
  fail:
+  delete[] topic_str;
+  delete[] partition_str;
+  
   if (publisher) {
     rmw_publisher_free(publisher);
   }
@@ -225,6 +279,10 @@ rmw_create_publisher( const rmw_node_t        * node,
   if (buf) {
     rmw_free(buf);
   }
+  RCUTILS_LOG_DEBUG_NAMED(
+    "rmw_coredx_cpp",
+    "%s[ FAILED ]",
+    __FUNCTION__ );
   return NULL;
 }
 
