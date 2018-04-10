@@ -73,8 +73,8 @@ rmw_create_wait_set(size_t max_conditions)
 
   // If max_conditions is greater than zero, re-allocate both ConditionSeqs to max_conditions
   if (max_conditions > 0) {
-    waitset_info->active_conditions.resize(max_conditions);
-    waitset_info->attached_conditions.resize(max_conditions);
+    waitset_info->active_conditions.resize(static_cast<uint32_t>(max_conditions));
+    waitset_info->attached_conditions.resize(static_cast<uint32_t>(max_conditions));
   } 
 
   RCUTILS_LOG_DEBUG_NAMED(

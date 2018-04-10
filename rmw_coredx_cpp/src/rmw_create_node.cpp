@@ -23,6 +23,7 @@
 #include <rmw/error_handling.h>
 #include <rmw/impl/cpp/macros.hpp>
 
+#include <rcutils/get_env.h>
 #include <rcutils/logging_macros.h>
 
 #include <dds/dds.hh>
@@ -37,9 +38,6 @@ extern "C" {
 #endif
 
 /* ************************************************
- * how do we do this more flexibly?? 
- * Seems like this must be handled more gracefully somewhere else... but I can't find it.
- * also rcl_impl_getenv() would be nice, but is not exposed in a public header (it seems?)
  */
 static void
 set_log_level()
@@ -47,9 +45,10 @@ set_log_level()
   static int    done = 0;
   if ( !done )
     {
-      const char  * env;
-      env = getenv("RMW_COREDX_LOG_LEVEL");
-      if ( env )
+      const char * env = nullptr;
+      const char * err_str = nullptr;
+      err_str = rcutils_get_env("RMW_COREDX_LOG_LEVEL", &env);
+      if ( !err_str && env && (strlen(env) > 0) )
         {
           rcutils_ret_t ret = RCUTILS_RET_INVALID_ARGUMENT;
           if (strcmp( env, "DEBUG" ) == 0 )
@@ -93,8 +92,10 @@ rmw_create_node (
 
   DDS::DomainParticipantQos dp_qos;
   dpf_->get_default_participant_qos(dp_qos);
-  strncpy(dp_qos.entity_name.value, name, COREDX_ENTITY_NAME_MAX);
-  
+  size_t name_len = strlen(name);
+  if ( name_len > COREDX_ENTITY_NAME_MAX) name_len = COREDX_ENTITY_NAME_MAX;
+  memcpy( dp_qos.entity_name.value, name, name_len );
+  dp_qos.entity_name.value[COREDX_ENTITY_NAME_MAX-1] = '\0';
   DDS::DomainId_t           domain = static_cast<DDS::DomainId_t>(domain_id);
   DDS::DomainParticipant  * participant =
     dpf_->create_participant(domain,

@@ -33,7 +33,7 @@ namespace msg
 {
 namespace dds_
 {
-class @(field.type.type)_;
+struct @(field.type.type)_;
 }  // namespace dds_
 namespace typesupport_coredx_cpp
 {

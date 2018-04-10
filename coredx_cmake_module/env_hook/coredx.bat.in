@@ -1,13 +1,13 @@
 set "CoreDX_HOME=@CoreDX_HOME@"
 
 :: Call CoreDX's env setup script, piping stdout to nul, since they have echo on.
-:: Note: if more that one CoreDX DDS target or host platform is installed, the script
+:: Note: if more than one CoreDX DDS target or host platform is installed, the script
 :: will request user input to select the host or platform or both.
-call "%CoreDX_HOME:/=\%\scripts\cdxenv.bat" 1> nul
-
+:: call "%CoreDX_HOME:/=\%\scripts\cdxenv.bat" 1> nul
 :: Add the CoreDX_LIBRARY_DIR to the Path so .dll's can be found at runtime.
 set "CoreDX_LIBRARY_DIR=@CoreDX_LIBRARY_DIR@"
 call:ament_prepend_unique_value PATH "%CoreDX_LIBRARY_DIR:/=\%"
+call:ament_prepend_unique_value PATH "%COREDX_TOP:/=\%\host\%COREDX_HOST%\bin"
 set "CoreDX_LIBRARY_DIR="
 
 goto:eof

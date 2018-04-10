@@ -140,29 +140,28 @@ rmw_create_publisher( const rmw_node_t        * node,
     goto fail;
   }
   
-  if ( partition_str ) {
-    if ( strlen(partition_str) != 0 ) {  // only set if not empty
-      publisher_qos.partition.name.resize(1);
-      publisher_qos.partition.name[0] = partition_str; // passing ownership to CoreDX
-      RCUTILS_LOG_DEBUG_NAMED(
-                              "rmw_coredx_cpp",
-                              "%s[ set partition: '%s' ]",
+  if ( partition_str &&
+       ( strlen(partition_str) != 0 ) ) {
+    publisher_qos.partition.name.resize(1);
+    publisher_qos.partition.name[0] = partition_str; // passing ownership to CoreDX
+    RCUTILS_LOG_DEBUG_NAMED(
+                            "rmw_coredx_cpp",
+                            "%s[ set partition: '%s' ]",
                               __FUNCTION__,
-                              publisher_qos.partition.name[0] );
-    
-    } else {
-      delete[] partition_str;
-    }
-    partition_str = nullptr;
+                            publisher_qos.partition.name[0] );
   }
   
   dds_publisher = participant->create_publisher(
     publisher_qos, NULL, 0);
+  if ( partition_str &&
+       ( strlen(partition_str) != 0 ) ) {
+    publisher_qos.partition.name[0] = nullptr;
+  }
   if (!dds_publisher) {
     RMW_SET_ERROR_MSG("failed to create publisher");
     goto fail;
   }
-
+  
   topic_description = participant->lookup_topicdescription( topic_str );
   if (!topic_description) {
     DDS::TopicQos default_topic_qos;
@@ -188,7 +187,7 @@ rmw_create_publisher( const rmw_node_t        * node,
       goto fail;
     }
   }
-  delete[] topic_str;
+  rmw_free(topic_str);
   topic_str = nullptr;
 
   if (!get_datawriter_qos(participant, qos_policies, datawriter_qos)) {
@@ -248,8 +247,8 @@ rmw_create_publisher( const rmw_node_t        * node,
   return publisher;
 
  fail:
-  delete[] topic_str;
-  delete[] partition_str;
+  rmw_free( topic_str );
+  rmw_free( partition_str );
   
   if (publisher) {
     rmw_publisher_free(publisher);

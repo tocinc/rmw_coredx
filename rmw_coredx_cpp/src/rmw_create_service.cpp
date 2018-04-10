@@ -141,11 +141,12 @@ rmw_create_service( const rmw_node_t                    * node,
     RMW_SET_ERROR_MSG("data reader handle is null");
     goto fail;
   }
-  delete[] service_str;
+  rmw_free( service_str );
   service_str = nullptr;
 
   // update partition in the service subscriber 
-  {
+  if ( response_partition_str &&
+       (strlen(response_partition_str) != 0) ) {
     DDS::Subscriber * dds_subscriber = nullptr;
     DDS::SubscriberQos subscriber_qos;
     dds_subscriber = request_datareader->get_subscriber();
@@ -154,20 +155,17 @@ rmw_create_service( const rmw_node_t                    * node,
       RMW_SET_ERROR_MSG("failed to get default subscriber qos");
       goto fail;
     }
-    if (response_partition_str) {
-      if (strlen(response_partition_str) != 0) {
-        subscriber_qos.partition.name.resize( 1 );
-        subscriber_qos.partition.name[0] = response_partition_str;
-      } else {
-        delete[] response_partition_str;
-      }
-      response_partition_str = nullptr;
-    }
+    subscriber_qos.partition.name.resize( 1 );
+    subscriber_qos.partition.name[0] = response_partition_str;
     dds_subscriber->set_qos(subscriber_qos);
+    subscriber_qos.partition.name[0] = nullptr;
   }
-
+  rmw_free( response_partition_str );
+  response_partition_str = nullptr;
+  
   // update partition in the service publisher 
-  {
+  if ( (request_partition_str) &&
+       (strlen(request_partition_str) != 0) ) {
     DDS::Publisher * dds_publisher = nullptr;
     DDS::PublisherQos publisher_qos;
     dds_publisher = reply_datawriter->get_publisher();
@@ -176,17 +174,13 @@ rmw_create_service( const rmw_node_t                    * node,
       RMW_SET_ERROR_MSG("failed to get default subscriber qos");
       goto fail;
     }
-    if (request_partition_str) {
-      if (strlen(request_partition_str) != 0) {
-        publisher_qos.partition.name.resize( 1 );
-        publisher_qos.partition.name[0] = request_partition_str;
-      } else {
-        delete[] request_partition_str;
-      }
-      request_partition_str = nullptr;
-    }
+    publisher_qos.partition.name.resize( 1 );
+    publisher_qos.partition.name[0] = request_partition_str;
     dds_publisher->set_qos(publisher_qos);
+    publisher_qos.partition.name[0] = nullptr;
   }
+  rmw_free( request_partition_str );
+  request_partition_str = nullptr;
     
   read_condition = request_datareader->create_readcondition(
      DDS::ANY_SAMPLE_STATE, DDS::ANY_VIEW_STATE, DDS::ANY_INSTANCE_STATE);
@@ -223,9 +217,9 @@ rmw_create_service( const rmw_node_t                    * node,
   
   return service;
 fail:
-  delete[] request_partition_str;
-  delete[] response_partition_str;
-  delete[] service_str;
+  rmw_free( request_partition_str ); 
+  rmw_free( response_partition_str );
+  rmw_free( service_str );
   
   if (service) {
     rmw_service_free(service);

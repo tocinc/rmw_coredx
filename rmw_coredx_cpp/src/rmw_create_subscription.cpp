@@ -132,23 +132,22 @@ rmw_create_subscription( const rmw_node_t        * node,
 
   // we have to set the partition array to length 1
   // and then set the partition_str in it
-  if ( partition_str ) {
-    if ( strlen(partition_str) != 0 ) {  // only set if not empty
-      subscriber_qos.partition.name.resize(1);
-      subscriber_qos.partition.name[0] = partition_str; // passing ownership to CoreDX
-      RCUTILS_LOG_DEBUG_NAMED(
-                              "rmw_coredx_cpp",
-                              "%s[ set partition: '%s' ]",
-                              __FUNCTION__,
-                              subscriber_qos.partition.name[0] );
-    
-    } else {
-      delete[] partition_str;
-    }
-    partition_str = nullptr;
+  if ( partition_str && 
+       ( strlen(partition_str) != 0) ) {  // only set if not empty
+    subscriber_qos.partition.name.resize(1);
+    subscriber_qos.partition.name[0] = partition_str; // passing ownership to CoreDX
+    RCUTILS_LOG_DEBUG_NAMED(
+                            "rmw_coredx_cpp",
+                            "%s[ set partition: '%s' ]",
+                            __FUNCTION__,
+                            subscriber_qos.partition.name[0] );
   }
   
   dds_subscriber = participant->create_subscriber(subscriber_qos, NULL, 0);
+  if ( partition_str && 
+       ( strlen(partition_str) != 0) ) {  // only set if not empty
+    subscriber_qos.partition.name[0] = nullptr;
+  }
   if (!dds_subscriber) {
     RMW_SET_ERROR_MSG("failed to create subscriber");
     goto fail;
@@ -177,7 +176,7 @@ rmw_create_subscription( const rmw_node_t        * node,
       goto fail;
     }
   }
-  delete[] topic_str;
+  rmw_free( topic_str );
   topic_str = nullptr;
   
   if (!get_datareader_qos(participant, qos_policies, datareader_qos)) {

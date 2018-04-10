@@ -64,17 +64,6 @@ _get_ros_prefix_if_exists(const std::string & topic_name)
 
 /* *******************************************************
  */
-static char *
-new_strdup( const char * n )
-{
-  if ( !n ) return NULL;
-  char * r = new char [strlen(n) + 1 ];
-  if ( r ) strcpy (r, n );
-  return r;
-}
-  
-/* *******************************************************
- */
 bool
 rmw_coredx_process_topic_name(
   const char * topic_name,
@@ -104,16 +93,16 @@ rmw_coredx_process_topic_name(
     {
       if ( !avoid_ros_namespace_conventions )
         {
-          *partition_str = new_strdup( ros_topic_prefix );
+          *partition_str = do_strdup( ros_topic_prefix );
         }
-      *topic_str = new_strdup( name_tokens.data[0] );
+      *topic_str = do_strdup( name_tokens.data[0] );
     }
   else if ( name_tokens.size == 2 )
     {
       if ( avoid_ros_namespace_conventions )
         {
           // no ros_topic_prefix, so store the user's namespace directly
-          *partition_str = new_strdup( name_tokens.data[0] );
+          *partition_str = do_strdup( name_tokens.data[0] );
         }
       else
         {
@@ -126,10 +115,10 @@ rmw_coredx_process_topic_name(
               success = false;
               goto end;
             }
-          *partition_str = new_strdup(concat_str);
+          *partition_str = do_strdup(concat_str);
           allocator.deallocate( concat_str, allocator.state );
         }
-      *topic_str = new_strdup( name_tokens.data[1] );
+      *topic_str = do_strdup( name_tokens.data[1] );
     }
   else
     {
