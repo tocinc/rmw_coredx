@@ -145,8 +145,8 @@ rmw_create_service( const rmw_node_t                    * node,
   service_str = nullptr;
 
   // update partition in the service subscriber 
-  if ( response_partition_str &&
-       (strlen(response_partition_str) != 0) ) {
+  if ( request_partition_str &&
+       (strlen(request_partition_str) != 0) ) {
     DDS::Subscriber * dds_subscriber = nullptr;
     DDS::SubscriberQos subscriber_qos;
     dds_subscriber = request_datareader->get_subscriber();
@@ -156,16 +156,16 @@ rmw_create_service( const rmw_node_t                    * node,
       goto fail;
     }
     subscriber_qos.partition.name.resize( 1 );
-    subscriber_qos.partition.name[0] = response_partition_str;
+    subscriber_qos.partition.name[0] = request_partition_str;
     dds_subscriber->set_qos(subscriber_qos);
     subscriber_qos.partition.name[0] = nullptr;
   }
-  rmw_free( response_partition_str );
-  response_partition_str = nullptr;
+  rmw_free( request_partition_str );
+  request_partition_str = nullptr;
   
   // update partition in the service publisher 
-  if ( (request_partition_str) &&
-       (strlen(request_partition_str) != 0) ) {
+  if ( (response_partition_str) &&
+       (strlen(response_partition_str) != 0) ) {
     DDS::Publisher * dds_publisher = nullptr;
     DDS::PublisherQos publisher_qos;
     dds_publisher = reply_datawriter->get_publisher();
@@ -175,12 +175,12 @@ rmw_create_service( const rmw_node_t                    * node,
       goto fail;
     }
     publisher_qos.partition.name.resize( 1 );
-    publisher_qos.partition.name[0] = request_partition_str;
+    publisher_qos.partition.name[0] = response_partition_str;
     dds_publisher->set_qos(publisher_qos);
     publisher_qos.partition.name[0] = nullptr;
   }
-  rmw_free( request_partition_str );
-  request_partition_str = nullptr;
+  rmw_free( response_partition_str );
+  response_partition_str = nullptr;
     
   read_condition = request_datareader->create_readcondition(
      DDS::ANY_SAMPLE_STATE, DDS::ANY_VIEW_STATE, DDS::ANY_INSTANCE_STATE);
