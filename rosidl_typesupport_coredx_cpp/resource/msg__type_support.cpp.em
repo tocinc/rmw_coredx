@@ -96,7 +96,6 @@ convert_ros_message_to_dds(
       throw std::runtime_error("array size exceeds upper bound");
     }
 @[      end if]@
-
 @[      if field.type.type == 'string']@
     for (size_t i = 0; i < dds_message.@(field.name)_.length(); i++) {
 @[        if field.type.string_upper_bound == 0]@
@@ -104,7 +103,6 @@ convert_ros_message_to_dds(
 @[        end if]@
     }
 @[      end if]@
-      
     uint32_t length = static_cast<int32_t>(size);
     if (!dds_message.@(field.name)_.resize(length)) {
       throw std::runtime_error("failed to set length of sequence");
@@ -189,7 +187,7 @@ publish__@(spec.base_type.type)(
     DDS::ReturnCode_t status = data_writer->write(dds_message, DDS::HANDLE_NIL);
     success = status == DDS::RETCODE_OK;
   }
-  
+
   delete dds_message;
   return success;
 }
@@ -306,15 +304,15 @@ take__@(spec.base_type.type)(
     // if they are equal the sample has been sent from this process and should be ignored
     void * pub_key = DDS_InstanceHandle_get_key(sample_info->publication_handle);
     void * sub_key = DDS_InstanceHandle_get_key(topic_reader->get_instance_handle());
-    if (pub_key && sub_key)
-      {
-        if (memcmp(pub_key, sub_key, 12) == 0) /* belong to same DomainParticipant */
-          ignore_sample = true;
-        else
-          ignore_sample = false;
+    if (pub_key && sub_key) {
+      if (memcmp(pub_key, sub_key, 12) == 0) { /* belong to same DomainParticipant */
+        ignore_sample = true;
+      } else {
+        ignore_sample = false;
       }
+    }
   }
-  
+
   if (sample_info->valid_data && sending_publication_handle) {
     *static_cast<DDS::InstanceHandle_t *>(sending_publication_handle) =
       sample_info->publication_handle;

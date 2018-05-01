@@ -23,6 +23,8 @@
 #include <rmw/error_handling.h>
 #include <rmw/impl/cpp/macros.hpp>
 
+#include <rcutils/logging_macros.h>
+
 #include <dds/dds.hh>
 #include <dds/dds_builtinDataReader.hh>
 
@@ -33,7 +35,7 @@
 /* ************************************************
  */
 void
-CustomDataReaderListener::add_information(const DDS::SampleInfo & sample_info,
+CustomDataReaderListener::add_information(const DDS::InstanceHandle_t handle,
                                           const std::string & topic_name,
                                           const std::string & type_name)
 {
@@ -42,18 +44,18 @@ CustomDataReaderListener::add_information(const DDS::SampleInfo & sample_info,
   topic_types.insert(type_name);
   // store mapping to instance handle
   TopicDescriptor topic_descriptor;
-  topic_descriptor.instance_handle = sample_info.instance_handle;
+  topic_descriptor.instance_handle = handle;
   topic_descriptor.name = topic_name;
   topic_descriptor.type = type_name;
   topic_descriptors.push_back(topic_descriptor);
 }
 
 void
-CustomDataReaderListener::remove_information(const DDS::SampleInfo & sample_info)
+CustomDataReaderListener::remove_information(const DDS::InstanceHandle_t handle)
 {
   // find entry by instance handle
   for (auto it = topic_descriptors.begin(); it != topic_descriptors.end(); ++it) {
-    if (it->instance_handle == sample_info.instance_handle) {
+    if (it->instance_handle == handle) {
       // remove entries
       auto & topic_types = topic_names_and_types[it->name];
       topic_types.erase(topic_types.find(it->type));
@@ -101,9 +103,17 @@ CustomPublisherListener::on_data_available(DDS::DataReader * reader)
 
   for (uint32_t i = 0; i < data_seq.length(); ++i) {
     if (info_seq[i]->valid_data) {
-      add_information(*(info_seq[i]), data_seq[i]->topic_name, data_seq[i]->type_name);
+      auto fqn = std::string("");
+      for (uint j = 0; j < data_seq[i]->partition.name.length(); j++) {
+        fqn += data_seq[i]->partition.name[j];
+        fqn += "/";
+      }
+      fqn += data_seq[i]->topic_name;
+      add_information(info_seq[i]->instance_handle,
+                      fqn,
+                      data_seq[i]->type_name);
     } else {
-      remove_information(*(info_seq[i]));
+      remove_information(info_seq[i]->instance_handle);
     }
   }
 
@@ -141,9 +151,17 @@ CustomSubscriberListener::on_data_available(DDS::DataReader * reader)
 
   for (uint32_t i = 0; i < data_seq.length(); ++i) {
     if (info_seq[i]->valid_data) {
-      add_information(*(info_seq[i]), data_seq[i]->topic_name, data_seq[i]->type_name);
+      auto fqn = std::string("");
+      for (uint j = 0; j < data_seq[i]->partition.name.length(); j++) {
+        fqn += data_seq[i]->partition.name[j];
+        fqn += "/";
+      }
+      fqn += data_seq[i]->topic_name;
+      add_information(info_seq[i]->instance_handle,
+                      fqn,
+                      data_seq[i]->type_name);
     } else {
-      remove_information(*(info_seq[i]));
+      remove_information(info_seq[i]->instance_handle);
     }
   }
 

@@ -76,6 +76,8 @@ rmw_create_node (
   size_t       domain_id,
   const rmw_node_security_options_t * security_options )
 {
+  (void)security_options; /* todo ... */
+
   DDS::DomainParticipantFactory * dpf_ = DDS::DomainParticipantFactory::get_instance();
   if (!dpf_) {
     RMW_SET_ERROR_MSG("failed to get participant factory");

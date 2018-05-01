@@ -23,7 +23,9 @@
 #include <rmw/error_handling.h>
 #include <rmw/impl/cpp/macros.hpp>
 #include <rmw/get_topic_names_and_types.h>
+#include <rmw/convert_rcutils_ret_to_rmw_ret.h>
 
+#include <rcutils/logging_macros.h>
 #include <rcutils/strdup.h>
 
 #include <dds/dds.hh>
@@ -32,11 +34,40 @@
 #include "rmw_coredx_cpp/identifier.hpp"
 #include "rmw_coredx_types.hpp"
 #include "util.hpp"
+#include "names.hpp"
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
+static std::string
+_demangle_if_ros_topic(const std::string & topic_name)
+{
+  std::string prefix = _get_ros_prefix_if_exists(topic_name);
+  if ( prefix.length() ) {
+    return topic_name.substr(strlen(ros_topic_prefix));
+  }
+  return topic_name;
+}
+
+static std::string
+_demangle_if_ros_type(const std::string & dds_type_string)
+{
+  std::string substring = "::msg::dds_::";
+  size_t substring_position = dds_type_string.find(substring);
+  if (
+    dds_type_string[dds_type_string.size() - 1] == '_' &&
+    substring_position != std::string::npos )
+  {
+    std::string pkg = dds_type_string.substr( 0, substring_position );
+    size_t start = substring_position + substring.size();
+    std::string type_name = dds_type_string.substr( start, dds_type_string.length() - 1 - start );
+    return pkg + "/" + type_name;
+  }
+  // not a ROS type
+  return dds_type_string;
+}
+  
 /* ************************************************
  */
 rmw_ret_t
@@ -75,78 +106,86 @@ rmw_get_topic_names_and_types(
   }
 
   // combine publisher and subscriber information
-  std::map<std::string, std::set<std::string>> topics_with_multiple_types;
+  std::map<std::string, std::set<std::string>> topics;
   for (auto it : node_info->publisher_listener->topic_names_and_types) {
+    if ( !no_demangle && _get_ros_prefix_if_exists( it.first ) != ros_topic_prefix ) {
+      continue; /* not a plain topic if not prefixed with "rt/" */
+    }
     for (auto & jt : it.second) {
-      topics_with_multiple_types[it.first].insert(jt);
+      topics[it.first].insert(jt);
     }
   }
   for (auto it : node_info->subscriber_listener->topic_names_and_types) {
+    if ( !no_demangle && _get_ros_prefix_if_exists( it.first ) != ros_topic_prefix ) {
+      continue; /* not a plain topic if not prefixed with "rt/" */
+    }
     for (auto & jt : it.second) {
-      topics_with_multiple_types[it.first].insert(jt);
+      topics[it.first].insert(jt);
     }
   }
 
-  // ignore inconsistent types
-  std::map<std::string, std::string> topics;
-  for (auto & it : topics_with_multiple_types) {
-    if (it.second.size() != 1) {
-      fprintf(stderr, "topic type mismatch - ignoring topic '%s'\n", it.first.c_str());
-      continue;
+  if ( topics.size() > 0 ) {
+    // Setup string array to store names
+    rmw_ret_t rmw_ret = rmw_names_and_types_init(topic_names_and_types, topics.size(), allocator);
+    if (rmw_ret != RMW_RET_OK) {
+      return rmw_ret;
     }
-    topics[it.first] = *it.second.begin();
-  }
-
-  // reformat type name
-  std::string substr = "::msg::dds_::";
-  for (auto & it : topics) {
-    size_t substr_pos = it.second.find(substr);
-    if (it.second[it.second.size() - 1] == '_' && substr_pos != std::string::npos) {
-      it.second = it.second.substr(0, substr_pos) + "/" + it.second.substr(
-        substr_pos + substr.size(), it.second.size() - substr_pos - substr.size() - 1);
+    // Setup cleanup function, in case of failure below
+    auto fail_cleanup = [&topic_names_and_types]() {
+        rmw_ret_t rmw_ret = rmw_names_and_types_fini(topic_names_and_types);
+        if (rmw_ret != RMW_RET_OK) {
+          RCUTILS_LOG_ERROR("error during report of error: %s", rmw_get_error_string_safe())
+        }
+      };
+    // Setup demangling functions based on no_demangle option
+    auto demangle_topic = _demangle_if_ros_topic;
+    auto demangle_type = _demangle_if_ros_type;
+    if (no_demangle) {
+      auto noop = [](const std::string & in) {
+          return in;
+        };
+      demangle_topic = noop;
+      demangle_type = noop;
     }
-  }
-
-  // copy data into result handle
-  if (topics.size() > 0) {
-    rmw_ret_t ret = rmw_names_and_types_init(topic_names_and_types, topics.size(), allocator);
-    if (ret != RMW_RET_OK) {
-      RMW_SET_ERROR_MSG("failed to allocate memory for topic names and types")
-      return RMW_RET_ERROR;
-    }
-    size_t i = 0;
-    for (auto it : topics) {
-      topic_names_and_types->names.data[i] = rcutils_strdup(it.first.c_str(), *allocator);
-      if (!topic_names_and_types->names.data[i]) {
-        RMW_SET_ERROR_MSG("failed to allocate memory for topic name")
-          goto fail;
+    // For each topic, store the name, initialize the string array for types, and store all types
+    size_t index = 0;
+    for (const auto & topic_n_types : topics) {
+      // Duplicate and store the topic_name
+      char * topic_name = rcutils_strdup( demangle_topic(topic_n_types.first).c_str(), *allocator );
+      if ( !topic_name ) {
+        RMW_SET_ERROR_MSG_ALLOC("failed to allocate memory for topic name", *allocator);
+        fail_cleanup();
+        return RMW_RET_BAD_ALLOC;
       }
-      rcutils_ret_t rcutils_ret = rcutils_string_array_init(
-                                                            &topic_names_and_types->types[i],
-                                                            1,
-                                                            allocator);
-
-      if (rcutils_ret != RCUTILS_RET_OK) {
-        RMW_SET_ERROR_MSG(rcutils_get_error_string_safe())
-          goto fail;
+      topic_names_and_types->names.data[index] = topic_name;
+      // Setup storage for types
+      {
+        rcutils_ret_t rcutils_ret = rcutils_string_array_init(
+          &topic_names_and_types->types[index],
+          topic_n_types.second.size(),
+          allocator);
+        if ( rcutils_ret != RCUTILS_RET_OK ) {
+          RMW_SET_ERROR_MSG( rcutils_get_error_string_safe() )
+          fail_cleanup();
+          return rmw_convert_rcutils_ret_to_rmw_ret(rcutils_ret);
+        }
       }
-
-      topic_names_and_types->types[i].data[0] = rcutils_strdup(it.second.c_str(), *allocator);
-      
-      if (!topic_names_and_types->types[i].data[0]) {
-        rmw_free(topic_names_and_types->names.data[i]);
-        RMW_SET_ERROR_MSG("failed to allocate memory for type name")
-        goto fail;
-      }
-      ++i;
-    }
+      // Duplicate and store each type for the topic
+      size_t type_index = 0;
+      for ( const auto & type : topic_n_types.second ) {
+        char * type_name = rcutils_strdup( demangle_type(type).c_str(), *allocator );
+        if (!type_name) {
+          RMW_SET_ERROR_MSG_ALLOC("failed to allocate memory for type name", *allocator)
+          fail_cleanup();
+          return RMW_RET_BAD_ALLOC;
+        }
+        topic_names_and_types->types[index].data[type_index] = type_name;
+        ++type_index;
+      }  // for each type
+      ++index;
+    }  // for each topic
   }
-
   return RMW_RET_OK;
-fail:
-  rmw_ret_t ret = rmw_names_and_types_fini(topic_names_and_types);
-  (void)ret;
-  return RMW_RET_ERROR;
 }
 
 

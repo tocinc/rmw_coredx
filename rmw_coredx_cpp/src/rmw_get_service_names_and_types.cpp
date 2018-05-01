@@ -82,7 +82,7 @@ _demangle_service_from_topic( const std::string & topic_name )
     return "";
   }
   // strip off the suffix first
-  std::string service_name = topic_name.substr(0, suffix_position + 1);
+  std::string service_name = topic_name.substr(0, suffix_position);
   // then the prefix
   size_t start = prefix.length();  // explicitly leave / after prefix
   return service_name.substr(start, service_name.length() - 1 - start);
@@ -96,8 +96,9 @@ _demangle_service_type_only(const std::string & dds_type_name)
   std::string ns_substring = "::srv::dds_::";
   size_t ns_substring_position = dds_type_name.find(ns_substring);
   if (ns_substring_position == std::string::npos) {
-    // not a ROS service type
-    return "";
+    /* in some cases, we don't register the type with a fully-qualified (scoped) type name */
+    /* so, this namespace preifx may not be present: we don't require its presence */
+    // return "";
   }
   auto suffixes = {
     std::string("_Response_"),
@@ -124,11 +125,17 @@ _demangle_service_type_only(const std::string & dds_type_name)
       ", report this: '%s'", dds_type_name.c_str())
     return "";
   }
+  std::string retval;
   // everything checks out, reformat it from '<pkg>::srv::dds_::<type><suffix>' to '<pkg>/<type>'
-  std::string pkg = dds_type_name.substr(0, ns_substring_position);
-  size_t start = ns_substring_position + ns_substring.length();
-  std::string type_name = dds_type_name.substr(start, suffix_position - start);
-  return pkg + "/" + type_name;
+  if ( ns_substring_position == std::string::npos ) {
+    retval = dds_type_name.substr(0, suffix_position);
+  } else {
+    std::string pkg = dds_type_name.substr(0, ns_substring_position);
+    size_t start = ns_substring_position + ns_substring.length();
+    std::string type_name = dds_type_name.substr(start, suffix_position - start);
+    retval = pkg + "/" + type_name;
+  }
+  return retval;
 }
   
 /* ************************************************
@@ -139,7 +146,6 @@ rmw_get_service_names_and_types(
                                 rcutils_allocator_t * allocator,
                                 rmw_names_and_types_t * service_names_and_types)
 {
-
   if (!allocator) {
     RMW_SET_ERROR_MSG("allocator is null")
     return RMW_RET_INVALID_ARGUMENT;
@@ -156,13 +162,13 @@ rmw_get_service_names_and_types(
   if ( ret != RMW_RET_OK ){
     return ret;
   }
-  
+
   auto node_info = static_cast<CoreDXNodeInfo *>(node->data);
   if (!node_info) {
     RMW_SET_ERROR_MSG("node info handle is null");
     return RMW_RET_ERROR;
   }
-	
+
   if (!node_info->publisher_listener) {
     RMW_SET_ERROR_MSG("publisher listener handle is null");
     return RMW_RET_ERROR;
@@ -224,6 +230,7 @@ rmw_get_service_names_and_types(
     size_t index = 0;
     for (const auto & service_n_types : services) {
       // Duplicate and store the service_name
+
       char * service_name = rcutils_strdup(service_n_types.first.c_str(), *allocator);
       if (!service_name) {
         RMW_SET_ERROR_MSG_ALLOC("failed to allocate memory for service name", *allocator);
@@ -260,7 +267,6 @@ rmw_get_service_names_and_types(
   }
   return RMW_RET_OK;
 }
-
 
 #if defined(__cplusplus)
 }

@@ -50,11 +50,11 @@ public:
   virtual void trigger_graph_guard_condition();
 
 protected:
-  virtual void add_information(const DDS::SampleInfo & sample_info,
+  virtual void add_information(const DDS::InstanceHandle_t handle,
                                const std::string & topic_name,
                                const std::string & type_name);
 
-  virtual void remove_information(const DDS::SampleInfo & sample_info);
+  virtual void remove_information(const DDS::InstanceHandle_t handle);
 
 private:
   struct TopicDescriptor

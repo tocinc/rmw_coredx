@@ -20,11 +20,13 @@
 @#  - get_header_filename_from_msg_name (function)
 @##########################################################################
 @
+
 #include "@(spec.base_type.pkg_name)/@(subfolder)/@(get_header_filename_from_msg_name(spec.base_type.type))__rosidl_typesupport_coredx_c.h"
+
+#include <stdio.h>
 
 #include <cassert>
 #include <limits>
-#include <stdio.h>
 
 // Provides the rosidl_typesupport_coredx_c__identifier symbol declaration.
 #include "rosidl_typesupport_coredx_c/identifier.h"
@@ -124,26 +126,26 @@ register_type(void * untyped_participant, const char * type_name)
   DDS::ReturnCode_t status =
     @(spec.base_type.pkg_name)::@(subfolder)::dds_::@(spec.base_type.type)_TypeSupport::register_type(participant, type_name);
   switch (status) {
-  case DDS::RETCODE_ERROR:
-    fprintf(stderr, "@(spec.base_type.pkg_name)::@(subfolder)::dds_::@(spec.base_type.type)_TypeSupport::register_type: "
-            "an internal error has occurred\n");
-    return false;
-  case DDS::RETCODE_BAD_PARAMETER:
-    fprintf(stderr, "@(spec.base_type.pkg_name)::@(subfolder)::dds_::@(spec.base_type.type)_TypeSupport::register_type: "
-            "bad domain participant or type name parameter\n");
-    return false;
-  case DDS::RETCODE_OUT_OF_RESOURCES:
-    fprintf(stderr, "@(spec.base_type.pkg_name)::@(subfolder)::dds_::@(spec.base_type.type)_TypeSupport::register_type: "
-            "out of resources\n");
-    return false;
-  case DDS::RETCODE_PRECONDITION_NOT_MET:
-    fprintf(stderr, "@(spec.base_type.pkg_name)::@(subfolder)::dds_::@(spec.base_type.type)_TypeSupport::register_type: "
-            "already registered with a different TypeSupport class\n");
-    return false;
-  case DDS::RETCODE_OK:
-    return true;
-  default:
-    fprintf(stderr, "@(spec.base_type.pkg_name)::@(subfolder)::dds_::@(spec.base_type.type)_TypeSupport::register_type: unknown return code\n");
+    case DDS::RETCODE_ERROR:
+      fprintf(stderr, "@(spec.base_type.pkg_name)::@(subfolder)::dds_::@(spec.base_type.type)_TypeSupport::register_type: "
+        "an internal error has occurred\n");
+      return false;
+    case DDS::RETCODE_BAD_PARAMETER:
+      fprintf(stderr, "@(spec.base_type.pkg_name)::@(subfolder)::dds_::@(spec.base_type.type)_TypeSupport::register_type: "
+        "bad domain participant or type name parameter\n");
+      return false;
+    case DDS::RETCODE_OUT_OF_RESOURCES:
+      fprintf(stderr, "@(spec.base_type.pkg_name)::@(subfolder)::dds_::@(spec.base_type.type)_TypeSupport::register_type: "
+        "out of resources\n");
+      return false;
+    case DDS::RETCODE_PRECONDITION_NOT_MET:
+      fprintf(stderr, "@(spec.base_type.pkg_name)::@(subfolder)::dds_::@(spec.base_type.type)_TypeSupport::register_type: "
+        "already registered with a different TypeSupport class\n");
+      return false;
+    case DDS::RETCODE_OK:
+      return true;
+    default:
+      fprintf(stderr, "@(spec.base_type.pkg_name)::@(subfolder)::dds_::@(spec.base_type.type)_TypeSupport::register_type: unknown return code\n");
   }
   return false;
 }
@@ -528,13 +530,13 @@ take(
       // if they are equal the sample has been sent from this process and should be ignored
       void * pub_key = DDS_InstanceHandle_get_key(sample_info->publication_handle);
       void * sub_key = DDS_InstanceHandle_get_key(topic_reader->get_instance_handle());
-      if (pub_key && sub_key)
-        {
-          if (memcmp(pub_key, sub_key, 12) == 0) /* belong to same DomainParticipant */
-            ignore_sample = true;
-          else
-            ignore_sample = false;
+      if (pub_key && sub_key) {
+        if (memcmp(pub_key, sub_key, 12) == 0) { /* belong to same DomainParticipant */
+          ignore_sample = true;
+        } else {
+          ignore_sample = false;
         }
+      }
       // This is nullptr when being used with plain rmw_take, so check first.
       if (sending_publication_handle) {
         *static_cast<DDS::InstanceHandle_t *>(sending_publication_handle) =

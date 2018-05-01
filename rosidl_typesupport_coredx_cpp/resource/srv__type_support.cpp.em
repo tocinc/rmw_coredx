@@ -61,10 +61,10 @@ void * create_requester__@(spec.srv_name)(
   const DDS::DataWriterQos * datawriter_qos = static_cast<const DDS::DataWriterQos *>(untyped_datawriter_qos);
   DDS::rpc::RequesterParams requester_params;
   requester_params.
-    domain_participant(participant).
-    service_name(service_name).
-    datareader_qos(*datareader_qos).
-    datawriter_qos(*datawriter_qos);
+  domain_participant(participant).
+  service_name(service_name).
+  datareader_qos(*datareader_qos).
+  datawriter_qos(*datawriter_qos);
 
   RequesterType * requester = static_cast<RequesterType *>(_allocator(sizeof(RequesterType)));
   try {
@@ -81,7 +81,7 @@ void * create_requester__@(spec.srv_name)(
 
 const char * destroy_requester__@(spec.srv_name)(
   void * untyped_requester,
-  void (* deallocator)(void *))
+  void (*deallocator)(void *))
 {
   using RequesterType = DDS::rpc::Requester<
       @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Request_,
@@ -139,10 +139,10 @@ void * create_replier__@(spec.srv_name)(
   const DDS::DataWriterQos * datawriter_qos = static_cast<const DDS::DataWriterQos *>(untyped_datawriter_qos);
   DDS::rpc::ReplierParams replier_params;
   replier_params
-    .domain_participant(participant)
-    .service_name(service_name)
-    .datareader_qos(*datareader_qos)
-    .datawriter_qos(*datawriter_qos);
+  .domain_participant(participant)
+  .service_name(service_name)
+  .datareader_qos(*datareader_qos)
+  .datawriter_qos(*datawriter_qos);
 
   ReplierType * replier = static_cast<ReplierType *>(_allocator(sizeof(ReplierType)));
   try {
@@ -159,7 +159,7 @@ void * create_replier__@(spec.srv_name)(
 
 const char * destroy_replier__@(spec.srv_name)(
   void * untyped_replier,
-  void (* deallocator)(void *))
+  void (*deallocator)(void *))
 {
   using ReplierType = DDS::rpc::Replier<
       @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Request_,
@@ -255,7 +255,7 @@ bool send_response__@(spec.srv_name)(
   if (!untyped_replier || !request_header || !untyped_ros_response) {
     return false;
   }
-  
+
   DDS::WriteSample<@(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Response_> response;
   ROSResponseType & ros_response = *(reinterpret_cast<ROSResponseType *>(untyped_ros_response));
   bool converted =
@@ -277,55 +277,59 @@ bool send_response__@(spec.srv_name)(
   replier->send_reply(response, request_identity);
   return true;
 }
- 
+
 // Function to get the type erased dds request datawriter for the requester
-void *get_request_datawriter__@(spec.srv_name)(void * untyped_requester)
+void * get_request_datawriter__@(spec.srv_name)(void * untyped_requester)
 {
-  if (!untyped_requester)
+  if (!untyped_requester) {
     return NULL;
+  }
   using RequesterType = DDS::rpc::Requester<
-    @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Request_,
-    @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Response_>;
+      @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Request_,
+      @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Response_>;
   RequesterType * requester = reinterpret_cast<RequesterType *>(untyped_requester);
   return requester->get_request_datawriter();
 }
- 
+
 // Function to get the type erased dds reply datawriter for the requester
 void * get_reply_datareader__@(spec.srv_name)(void * untyped_requester)
 {
-  if (!untyped_requester)
+  if (!untyped_requester) {
     return NULL;
+  }
   using RequesterType = DDS::rpc::Requester<
-    @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Request_,
-    @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Response_>;
+      @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Request_,
+      @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Response_>;
   RequesterType * requester = reinterpret_cast<RequesterType *>(untyped_requester);
   return requester->get_reply_datareader();
 }
- 
+
 // Function to get the type erased dds request datawriter for the replier
 void * get_request_datareader__@(spec.srv_name)(void * untyped_replier)
 {
-  if (!untyped_replier)
+  if (!untyped_replier) {
     return NULL;
+  }
   using ReplierType = DDS::rpc::Replier<
-    @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Request_,
-    @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Response_>;
+      @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Request_,
+      @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Response_>;
   ReplierType * replier = reinterpret_cast<ReplierType *>(untyped_replier);
   return replier->get_request_datareader();
 }
- 
+
 // Function to get the type erased dds reply datawriter for the replier
 void * get_reply_datawriter__@(spec.srv_name)(void * untyped_replier)
 {
-  if (!untyped_replier)
+  if (!untyped_replier) {
     return NULL;
+  }
   using ReplierType = DDS::rpc::Replier<
-    @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Request_,
-    @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Response_>;
+      @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Request_,
+      @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Response_>;
   ReplierType * replier = reinterpret_cast<ReplierType *>(untyped_replier);
   return replier->get_reply_datawriter();
 }
- 
+
 static service_type_support_callbacks_t callbacks = {
   "@(spec.pkg_name)",
   "@(spec.srv_name)",
