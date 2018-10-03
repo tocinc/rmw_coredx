@@ -37,9 +37,8 @@ rmw_coredx_process_topic_name( const char * topic_name,
 
 extern bool
 rmw_coredx_process_service_name( const char * service_name,
-                                 bool avoid_ros_namespace_conventions,
-                                 char ** service_str,
-                                 char ** request_partition_str,
-                                 char ** response_partition_str);
+				 bool avoid_ros_namespace_conventions,
+				 char ** request_topic_str,
+				 char ** response_topic_str);
 
 #endif // RMW_COREDX_CPP__NAMES_HPP_

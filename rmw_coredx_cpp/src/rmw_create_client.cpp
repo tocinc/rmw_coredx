@@ -54,13 +54,16 @@ rmw_create_client( const rmw_node_t                   * node,
     RMW_SET_ERROR_MSG("node handle is null");
     return NULL;
   }
-  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
-    node handle,
-    node->implementation_identifier, toc_coredx_identifier,
-    return NULL)
 
-  const rosidl_service_type_support_t * type_support; 
-  RMW_COREDX_EXTRACT_SERVICE_TYPESUPPORT(type_supports, type_support);
+  if (node->implementation_identifier != toc_coredx_identifier) {
+    RMW_SET_ERROR_MSG("node handle not from this implementation");
+    return nullptr;
+  }
+
+  if (!service_name || strlen(service_name) == 0) {
+    RMW_SET_ERROR_MSG("service name is null or empty string");
+    return nullptr;
+  }
 
   if (!qos_profile) {
     RMW_SET_ERROR_MSG("qos_profile is null");
@@ -78,25 +81,26 @@ rmw_create_client( const rmw_node_t                   * node,
     return NULL;
   }
 
+  const rosidl_service_type_support_t * type_support; 
+  RMW_COREDX_EXTRACT_SERVICE_TYPESUPPORT(type_supports, type_support);
+
   const service_type_support_callbacks_t * callbacks =
     static_cast<const service_type_support_callbacks_t *>(type_support->data);
   if (!callbacks) {
     RMW_SET_ERROR_MSG("callbacks handle is null");
     return NULL;
   }
-  char * request_partition_str = nullptr;
-  char * response_partition_str = nullptr;
-  char * service_str = nullptr;
+
+  char * request_topic_str = nullptr;
+  char * response_topic_str = nullptr;
   if ( !rmw_coredx_process_service_name(
                                         service_name,
                                         qos_profile->avoid_ros_namespace_conventions,
-                                        &service_str,
-                                        &request_partition_str,
-                                        &response_partition_str))
-    {
-      RMW_SET_ERROR_MSG("error processing service_name");
-      return NULL;
-    }
+                                        &request_topic_str,
+                                        &response_topic_str)) {
+    RMW_SET_ERROR_MSG("error processing service_name");
+    return NULL;
+  }
   
   // Past this point, a failure results in unrolling code in the goto fail block.
   rmw_client_t * client = nullptr;
@@ -127,7 +131,7 @@ rmw_create_client( const rmw_node_t                   * node,
   }
 
   requester = callbacks->create_requester(
-    participant, service_str, &datareader_qos, &datawriter_qos,
+      participant, service_name, request_topic_str, response_topic_str, &datareader_qos, &datawriter_qos,
     reinterpret_cast<void **>(&response_datareader),
     reinterpret_cast<void **>(&request_datawriter),
     &rmw_allocate);
@@ -139,47 +143,7 @@ rmw_create_client( const rmw_node_t                   * node,
     RMW_SET_ERROR_MSG("data reader handle is null");
     goto fail;
   }
-  rmw_free(service_str);
-  service_str = nullptr;
 
-  // update partition in the client subscriber 
-  if ( response_partition_str &&
-       (strlen(response_partition_str) != 0) ) {
-    DDS::Subscriber * dds_subscriber = nullptr;
-    DDS::SubscriberQos subscriber_qos;
-    dds_subscriber = response_datareader->get_subscriber();
-    DDS::ReturnCode_t status = dds_subscriber->get_qos( subscriber_qos );
-    if (status != DDS::RETCODE_OK) {
-      RMW_SET_ERROR_MSG("failed to get default subscriber qos");
-      goto fail;
-    }
-    subscriber_qos.partition.name.resize( 1 );
-    subscriber_qos.partition.name[0] = response_partition_str;
-    dds_subscriber->set_qos(subscriber_qos);
-    subscriber_qos.partition.name[0] = nullptr;
-  }
-  rmw_free( response_partition_str );
-  response_partition_str = nullptr;
-
-  // update partition in the client publisher 
-  if ( request_partition_str &&
-       (strlen(request_partition_str) != 0) ) {
-    DDS::Publisher * dds_publisher = nullptr;
-    DDS::PublisherQos publisher_qos;
-    dds_publisher = request_datawriter->get_publisher();
-    DDS::ReturnCode_t status = dds_publisher->get_qos( publisher_qos );
-    if (status != DDS_RETCODE_OK) {
-      RMW_SET_ERROR_MSG("failed to get default subscriber qos");
-      goto fail;
-    }
-    publisher_qos.partition.name.resize( 1 );
-    publisher_qos.partition.name[0] = request_partition_str;
-    dds_publisher->set_qos(publisher_qos);
-    publisher_qos.partition.name[0] = nullptr;
-  }
-  rmw_free( request_partition_str );
-  request_partition_str = nullptr;
-  
   read_condition = response_datareader->create_readcondition(
      DDS::ANY_SAMPLE_STATE, DDS::ANY_VIEW_STATE, DDS::ANY_INSTANCE_STATE);
   if (!read_condition) {
@@ -216,9 +180,8 @@ rmw_create_client( const rmw_node_t                   * node,
   
   return client;
 fail:
-  rmw_free( request_partition_str );
-  rmw_free( response_partition_str );
-  rmw_free( service_str );
+  rmw_free( request_topic_str );
+  rmw_free( response_topic_str );
   
   if (client_info) {
     if (response_datareader && client_info->read_condition_ ) {

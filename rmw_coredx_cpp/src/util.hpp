@@ -28,6 +28,8 @@ bool get_datawriter_qos(DDS::DomainParticipant  * participant,
                         DDS::DataWriterQos      & datawriter_qos);
 rmw_ret_t check_attach_condition_error(DDS::ReturnCode_t retcode);
 
+const message_type_support_callbacks_t *get_callbacks(const rosidl_message_type_support_t * type_supports );
+
 /* ************************************************
  */
 inline char *

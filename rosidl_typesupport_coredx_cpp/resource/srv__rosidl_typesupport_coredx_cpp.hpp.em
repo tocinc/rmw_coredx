@@ -41,6 +41,8 @@ void *
 create_requester__@(spec.srv_name)(
   void * untyped_participant,
   const char * service_name,
+  const char * req_topic_name,
+  const char * rep_topic_name,
   const void * untyped_datareader_qos,
   const void * untyped_datawriter_qos,
   void ** untyped_reader,
@@ -64,6 +66,8 @@ void *
 create_replier__@(spec.srv_name)(
   void * untyped_participant,
   const char * service_name,
+  const char * req_topic_name,
+  const char * rep_topic_name,
   const void * untyped_datareader_qos,
   const void * untyped_datawriter_qos,
   void ** untyped_reader,

@@ -55,14 +55,17 @@ rmw_create_subscription( const rmw_node_t        * node,
     RMW_SET_ERROR_MSG("node handle is null");
     return NULL;
   }
-  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
-     node handle,
-     node->implementation_identifier, toc_coredx_identifier,
-     return NULL)
-    
-  const rosidl_message_type_support_t * type_support; 
-  RMW_COREDX_EXTRACT_MESSAGE_TYPESUPPORT(type_supports, type_support);
-    
+
+  if (node->implementation_identifier != toc_coredx_identifier) {
+    RMW_SET_ERROR_MSG("node handle not from this implementation");
+    return nullptr;
+  }
+
+  if (!topic_name || strlen(topic_name) == 0) {
+    RMW_SET_ERROR_MSG("publisher topic is null or empty string");
+    return nullptr;
+  }
+
   if (!qos_policies) {
     RMW_SET_ERROR_MSG("qos_policies is null");
     return nullptr;
@@ -78,25 +81,24 @@ rmw_create_subscription( const rmw_node_t        * node,
     RMW_SET_ERROR_MSG("participant handle is null");
     return NULL;
   }
-
+  
+  const rosidl_message_type_support_t * type_support; 
+  RMW_COREDX_EXTRACT_MESSAGE_TYPESUPPORT(type_supports, type_support);
+    
   const message_type_support_callbacks_t * callbacks =
     static_cast<const message_type_support_callbacks_t *>(type_support->data);
   if (!callbacks) {
     RMW_SET_ERROR_MSG("callbacks handle is null");
     return NULL;
   }
+
   std::string type_name = _create_type_name(callbacks, "msg");
-  char * topic_str     = nullptr;
-  char * partition_str = nullptr;
-  
-  if ( ! rmw_coredx_process_topic_name( topic_name,
-                                        qos_policies->avoid_ros_namespace_conventions,
-                                        &topic_str,
-                                        &partition_str ) )
-    {
-      RMW_SET_ERROR_MSG("error processing topic_name");
-      return NULL;
-    }
+  std::string tmp_topic_name;
+  if ( !qos_policies->avoid_ros_namespace_conventions ) {
+    tmp_topic_name = std::string(ros_topic_prefix) + topic_name;
+  } else {
+    tmp_topic_name = std::string(topic_name);
+  }
   
   // Past this point, a failure results in unrolling code in the goto fail block.
   rmw_subscription_t * subscription = nullptr;
@@ -130,30 +132,13 @@ rmw_create_subscription( const rmw_node_t        * node,
     goto fail;
   }
 
-  // we have to set the partition array to length 1
-  // and then set the partition_str in it
-  if ( partition_str && 
-       ( strlen(partition_str) != 0) ) {  // only set if not empty
-    subscriber_qos.partition.name.resize(1);
-    subscriber_qos.partition.name[0] = partition_str; // passing ownership to CoreDX
-    RCUTILS_LOG_DEBUG_NAMED(
-                            "rmw_coredx_cpp",
-                            "%s[ set partition: '%s' ]",
-                            __FUNCTION__,
-                            subscriber_qos.partition.name[0] );
-  }
-  
   dds_subscriber = participant->create_subscriber(subscriber_qos, NULL, 0);
-  if ( partition_str && 
-       ( strlen(partition_str) != 0) ) {  // only set if not empty
-    subscriber_qos.partition.name[0] = nullptr;
-  }
   if (!dds_subscriber) {
     RMW_SET_ERROR_MSG("failed to create subscriber");
     goto fail;
   }
 
-  topic_description = participant->lookup_topicdescription(topic_str);
+  topic_description = participant->lookup_topicdescription(tmp_topic_name.c_str());
   if (!topic_description) {
     DDS::TopicQos default_topic_qos;
     status = participant->get_default_topic_qos(default_topic_qos);
@@ -163,21 +148,19 @@ rmw_create_subscription( const rmw_node_t        * node,
     }
 
     topic = participant->create_topic(
-      topic_str, type_name.c_str(), default_topic_qos, NULL, 0);
+      tmp_topic_name.c_str(), type_name.c_str(), default_topic_qos, NULL, 0);
     if (!topic) {
       RMW_SET_ERROR_MSG("failed to create topic");
       goto fail;
     }
   } else {
     DDS::Duration_t timeout(0,0);
-    topic = participant->find_topic(topic_str, timeout);
+    topic = participant->find_topic(tmp_topic_name.c_str(), timeout);
     if (!topic) {
       RMW_SET_ERROR_MSG("failed to find topic");
       goto fail;
     }
   }
-  rmw_free( topic_str );
-  topic_str = nullptr;
   
   if (!get_datareader_qos(participant, qos_policies, datareader_qos)) {
     // error string was set within the function

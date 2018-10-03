@@ -49,8 +49,8 @@ register_type__@(spec.base_type.type)(
 bool
 ROSIDL_TYPESUPPORT_COREDX_CPP_PUBLIC_@(spec.base_type.pkg_name)
 convert_ros_message_to_dds(
-  const @(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type) & ros_message,
-  @(spec.base_type.pkg_name)::@(subfolder)::dds_::@(spec.base_type.type)_ & dds_message);
+  const @(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type) * ros_message,
+  @(spec.base_type.pkg_name)::@(subfolder)::dds_::@(spec.base_type.type)_ * dds_message);
 
 bool
 publish__@(spec.base_type.type)(
@@ -60,8 +60,8 @@ publish__@(spec.base_type.type)(
 bool
 ROSIDL_TYPESUPPORT_COREDX_CPP_PUBLIC_@(spec.base_type.pkg_name)
 convert_dds_message_to_ros(
-  const @(spec.base_type.pkg_name)::@(subfolder)::dds_::@(spec.base_type.type)_ & dds_message,
-  @(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type) & ros_message);
+  const @(spec.base_type.pkg_name)::@(subfolder)::dds_::@(spec.base_type.type)_ * dds_message,
+  @(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type) * ros_message);
 
 bool
 take__@(spec.base_type.type)(

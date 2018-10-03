@@ -1,5 +1,5 @@
 # Copyright 2014 Open Source Robotics Foundation, Inc.
-# Modifications copyright (C) 2017 Twin Oaks Computing, Inc.
+# Modifications copyright (C) 2017-2018 Twin Oaks Computing, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -80,6 +80,7 @@ add_library(rmw_coredx_cpp SHARED
   src/rmw_create_service.cpp
   src/rmw_create_subscription.cpp
   src/rmw_create_wait_set.cpp
+  src/rmw_deserialize.cpp
   src/rmw_destroy_client.cpp
   src/rmw_destroy_guard_condition.cpp
   src/rmw_destroy_node.cpp
@@ -95,12 +96,15 @@ add_library(rmw_coredx_cpp SHARED
   src/rmw_init.cpp
   src/rmw_node_get_graph_guard_condition.cpp
   src/rmw_publish.cpp
+  src/rmw_publish_serialized.cpp
   src/rmw_send_request.cpp
   src/rmw_send_response.cpp
+  src/rmw_serialize.cpp
   src/rmw_service_server_is_available.cpp
   src/rmw_take.cpp
   src/rmw_take_request.cpp
   src/rmw_take_response.cpp
+  src/rmw_take_serialized.cpp
   src/rmw_take_with_info.cpp
   src/rmw_trigger_guard_condition.cpp
   src/rmw_wait.cpp

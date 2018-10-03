@@ -38,11 +38,11 @@ struct @(field.type.type)_;
 namespace typesupport_coredx_cpp
 {
 bool convert_ros_message_to_dds(
-  const @(field.type.pkg_name)::msg::@(field.type.type) &,
-  @(field.type.pkg_name)::msg::dds_::@(field.type.type)_ &);
+  const @(field.type.pkg_name)::msg::@(field.type.type) *,
+  @(field.type.pkg_name)::msg::dds_::@(field.type.type)_ *);
 bool convert_dds_message_to_ros(
-  const @(field.type.pkg_name)::msg::dds_::@(field.type.type)_ &,
-  @(field.type.pkg_name)::msg::@(field.type.type) &);
+  const @(field.type.pkg_name)::msg::dds_::@(field.type.type)_ *,
+  @(field.type.pkg_name)::msg::@(field.type.type) *);
 }  // namespace typesupport_coredx_cpp
 }  // namespace msg
 }  // namespace @(field.type.pkg_name)
@@ -70,16 +70,20 @@ register_type__@(spec.base_type.type)(
 
   return status == DDS::RETCODE_OK;
 }
-
+ 
 bool
-convert_ros_message_to_dds(
-  const @(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type) & ros_message,
-  @(spec.base_type.pkg_name)::@(subfolder)::dds_::@(spec.base_type.type)_ & dds_message)
+convert_ros_message_to_dds__@(spec.base_type.type)(
+  const void * untyped_ros_message,
+  void * untyped_dds_message )
 {
 @[if not spec.fields]@
-  (void)ros_message;
-  (void)dds_message;
-@[end if]@
+  (void)untyped_ros_message;
+  (void)untyped_dds_message;
+@[else]@
+  const @(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type) * ros_message =
+    (const @(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type) *)untyped_ros_message;
+  @(spec.base_type.pkg_name)::@(subfolder)::dds_::@(spec.base_type.type)_ * dds_message =
+    (@(spec.base_type.pkg_name)::@(subfolder)::dds_::@(spec.base_type.type)_ *)untyped_dds_message;
 @[for field in spec.fields]@
   // field.name @(field.name)
 @[  if field.type.is_array]@
@@ -87,7 +91,7 @@ convert_ros_message_to_dds(
 @[    if field.type.array_size and not field.type.is_upper_bound]@
     size_t size = @(field.type.array_size);
 @[    else]@
-    size_t size = ros_message.@(field.name).size();
+    size_t size = ros_message->@(field.name).size();
     if (size > (std::numeric_limits<int32_t>::max)()) {
       throw std::runtime_error("array size exceeds maximum DDS sequence size");
     }
@@ -97,14 +101,14 @@ convert_ros_message_to_dds(
     }
 @[      end if]@
 @[      if field.type.type == 'string']@
-    for (size_t i = 0; i < dds_message.@(field.name)_.length(); i++) {
+    for (size_t i = 0; i < dds_message->@(field.name)_.length(); i++) {
 @[        if field.type.string_upper_bound == 0]@
-      DDS::String_free(dds_message.@(field.name)_[static_cast<int32_t>(i)]);
+      DDS::String_free(dds_message->@(field.name)_[static_cast<int32_t>(i)]);
 @[        end if]@
     }
 @[      end if]@
     uint32_t length = static_cast<int32_t>(size);
-    if (!dds_message.@(field.name)_.resize(length)) {
+    if (!dds_message->@(field.name)_.resize(length)) {
       throw std::runtime_error("failed to set length of sequence");
     }
 @[    end if]@
@@ -112,26 +116,26 @@ convert_ros_message_to_dds(
 @[    if field.type.type == 'string']@
 @[      if field.type.string_upper_bound]@
 @[        if field.type.array_size and not field.type.is_upper_bound]@
-      strncpy(dds_message.@(field.name)_[static_cast<int32_t>(i)],
-              ros_message.@(field.name)[i].c_str(),
+      strncpy(dds_message->@(field.name)_[static_cast<int32_t>(i)],
+              ros_message->@(field.name)[i].c_str(),
               @(field.type.string_upper_bound));
 @[        else]@
-      strncpy(dds_message.@(field.name)_[static_cast<int32_t>(i)].value,
-              ros_message.@(field.name)[i].c_str(),
+      strncpy(dds_message->@(field.name)_[static_cast<int32_t>(i)].value,
+              ros_message->@(field.name)[i].c_str(),
               @(field.type.string_upper_bound));
 @[        end if]@
 @[      else]@
-      dds_message.@(field.name)_[static_cast<int32_t>(i)] =
-        DDS::String_dup(ros_message.@(field.name)[i].c_str());
+      dds_message->@(field.name)_[static_cast<int32_t>(i)] =
+        DDS::String_dup(ros_message->@(field.name)[i].c_str());
 @[      end if]@
 @[    elif field.type.is_primitive_type()]@
-      dds_message.@(field.name)_[static_cast<int32_t>(i)] =
-        ros_message.@(field.name)[i];
+      dds_message->@(field.name)_[static_cast<int32_t>(i)] =
+        ros_message->@(field.name)[i];
 @[    else]@
       if (
         !@(field.type.pkg_name)::msg::typesupport_coredx_cpp::convert_ros_message_to_dds(
-          ros_message.@(field.name)[i],
-          dds_message.@(field.name)_[static_cast<int32_t>(i)]))
+          &ros_message->@(field.name)[i],
+          &dds_message->@(field.name)_[static_cast<int32_t>(i)]))
       {
         return false;
       }
@@ -140,31 +144,40 @@ convert_ros_message_to_dds(
   }
 @[  elif field.type.type == 'string']@
 @[    if field.type.string_upper_bound]@
-  strncpy(dds_message.@(field.name)_,
-          ros_message.@(field.name).c_str(),
+  strncpy(dds_message->@(field.name)_,
+          ros_message->@(field.name).c_str(),
           @(field.type.string_upper_bound));
 @[    else]@
-  DDS::String_free(dds_message.@(field.name)_);
-  dds_message.@(field.name)_ =
-    DDS::String_dup(ros_message.@(field.name).c_str());
+  DDS::String_free(dds_message->@(field.name)_);
+  dds_message->@(field.name)_ =
+    DDS::String_dup(ros_message->@(field.name).c_str());
 @[    end if]@
 @[  elif field.type.is_primitive_type()]@
-  dds_message.@(field.name)_ =
-    ros_message.@(field.name);
+  dds_message->@(field.name)_ =
+    ros_message->@(field.name);
 @[  else]@
   if (
     !@(field.type.pkg_name)::msg::typesupport_coredx_cpp::convert_ros_message_to_dds(
-      ros_message.@(field.name),
-      dds_message.@(field.name)_))
+      &ros_message->@(field.name),
+      &dds_message->@(field.name)_))
   {
     return false;
   }
 @[  end if]@
-
 @[end for]@
+@[end if]@
   return true;
 }
 
+bool
+convert_ros_message_to_dds(
+  const @(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type) * ros_message,
+  @(spec.base_type.pkg_name)::@(subfolder)::dds_::@(spec.base_type.type)_ * dds_message )
+{
+  return convert_ros_message_to_dds__@(spec.base_type.type)( (const void*)ros_message, (void *) dds_message );
+}
+  
+ 
 bool
 publish__@(spec.base_type.type)(
   void * untyped_topic_writer,
@@ -180,7 +193,7 @@ publish__@(spec.base_type.type)(
     return false;
   }
 
-  bool success = convert_ros_message_to_dds(ros_message, *dds_message);
+  bool success = convert_ros_message_to_dds(&ros_message, dds_message);
   if (success) {
     @(spec.base_type.pkg_name)::@(subfolder)::dds_::@(spec.base_type.type)_DataWriter * data_writer =
       @(spec.base_type.pkg_name)::@(subfolder)::dds_::@(spec.base_type.type)_DataWriter::narrow(topic_writer);
@@ -193,14 +206,18 @@ publish__@(spec.base_type.type)(
 }
 
 bool
-convert_dds_message_to_ros(
-  const @(spec.base_type.pkg_name)::@(subfolder)::dds_::@(spec.base_type.type)_ & dds_message,
-  @(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type) & ros_message)
+convert_dds_message_to_ros__@(spec.base_type.type)(
+			   const void * untyped_dds_message,
+			   void * untyped_ros_message )
 {
 @[if not spec.fields]@
-  (void)ros_message;
-  (void)dds_message;
-@[end if]@
+  (void)untyped_ros_message;
+  (void)untyped_dds_message;
+@[else]@
+  const @(spec.base_type.pkg_name)::@(subfolder)::dds_::@(spec.base_type.type)_ * dds_message =
+    (const @(spec.base_type.pkg_name)::@(subfolder)::dds_::@(spec.base_type.type)_ *)untyped_dds_message;
+  @(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type) * ros_message =
+    (@(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type) *)untyped_ros_message;
 @[for field in spec.fields]@
   // field.name @(field.name)
 @[  if field.type.is_array]@
@@ -208,28 +225,28 @@ convert_dds_message_to_ros(
 @[    if field.type.array_size and not field.type.is_upper_bound]@
     size_t size = @(field.type.array_size);
 @[    else]@
-    size_t size = dds_message.@(field.name)_.length();
-    ros_message.@(field.name).resize(size);
+    size_t size = dds_message->@(field.name)_.length();
+    ros_message->@(field.name).resize(size);
 @[    end if]@
     for (size_t i = 0; i < size; i++) {
 @[    if field.type.type == 'string' and field.type.string_upper_bound]@
 @[      if field.type.array_size and not field.type.is_upper_bound]@
   // array of bounded strings
-      ros_message.@(field.name)[i] =
-        dds_message.@(field.name)_[static_cast<int32_t>(i)];
+      ros_message->@(field.name)[i] =
+        dds_message->@(field.name)_[static_cast<int32_t>(i)];
 @[      else]@
   // sequence of bounded strings
-      ros_message.@(field.name)[i] =
-        dds_message.@(field.name)_[static_cast<int32_t>(i)].value;
+      ros_message->@(field.name)[i] =
+        dds_message->@(field.name)_[static_cast<int32_t>(i)].value;
 @[      end if]@
 @[    elif field.type.is_primitive_type()]@
-      ros_message.@(field.name)[i] =
-        dds_message.@(field.name)_[static_cast<int32_t>(i)]@(' != 0' if field.type.type == 'bool' else '');
+      ros_message->@(field.name)[i] =
+        dds_message->@(field.name)_[static_cast<int32_t>(i)]@(' != 0' if field.type.type == 'bool' else '');
 @[    else]@
       if (
         !@(field.type.pkg_name)::msg::typesupport_coredx_cpp::convert_dds_message_to_ros(
-          dds_message.@(field.name)_[static_cast<int32_t>(i)],
-          ros_message.@(field.name)[i]))
+          &dds_message->@(field.name)_[static_cast<int32_t>(i)],
+          &ros_message->@(field.name)[i]))
       {
         return false;
       }
@@ -237,21 +254,30 @@ convert_dds_message_to_ros(
     }
   }
 @[  elif field.type.is_primitive_type()]@
-  ros_message.@(field.name) =
-    dds_message.@(field.name)_@(' != 0' if field.type.type == 'bool' else '');
+  ros_message->@(field.name) =
+    dds_message->@(field.name)_@(' != 0' if field.type.type == 'bool' else '');
 @[  else]@
   if (
     !@(field.type.pkg_name)::msg::typesupport_coredx_cpp::convert_dds_message_to_ros(
-      dds_message.@(field.name)_,
-      ros_message.@(field.name)))
+      &dds_message->@(field.name)_,
+      &ros_message->@(field.name)))
   {
     return false;
   }
 @[  end if]@
 
 @[end for]@
+@[end if]@
   return true;
 }
+ 
+bool
+convert_dds_message_to_ros(const @(spec.base_type.pkg_name)::@(subfolder)::dds_::@(spec.base_type.type)_ * dds_message,
+			         @(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type) * ros_message )
+{
+  return convert_dds_message_to_ros__@(spec.base_type.type)( (const void*)dds_message, (void*)ros_message );
+}
+ 
 
 bool
 take__@(spec.base_type.type)(
@@ -322,7 +348,7 @@ take__@(spec.base_type.type)(
   if (!ignore_sample) {
     @(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type) & ros_message =
       *(@(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type) *)untyped_ros_message;
-    success = convert_dds_message_to_ros(*(dds_messages[0]), ros_message);
+    success = convert_dds_message_to_ros((dds_messages[0]), &ros_message);
     if (success) {
       *taken = true;
     }
@@ -334,14 +360,109 @@ take__@(spec.base_type.type)(
   return success;
 }
 
+static bool serialize( const void    * untyped_ros_msg,
+		       rmw_serialized_message_t *buf )
+{
+  
+  if (untyped_ros_msg == 0) {
+    fprintf(stderr, "serialize: invalid ros message pointer\n");
+    return false;
+  }
+  if ( !buf ) {
+    fprintf(stderr, "serialize: invalid buf pointer\n");
+    return false;
+  }
+
+  const @(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type) * ros_message =
+    static_cast<const @(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type) *>(untyped_ros_msg);
+  @(spec.base_type.pkg_name)::@(subfolder)::dds_::@(spec.base_type.type)_  dds_message;
+  
+  // ros data -> dds data
+  if (!convert_ros_message_to_dds(ros_message, &dds_message)) {
+    return false;
+  }
+  
+  // get required size
+  size_t buf_len = dds_message.get_marshal_size( 0, 0 );
+  
+  // allocate required buffer
+  if ( buf_len > buf->buffer_capacity )
+    {
+      if ( buf->buffer_capacity > 0 )
+	buf->allocator.deallocate( buf->buffer, buf->allocator.state );
+      buf->buffer = static_cast<char *>(buf->allocator.allocate(buf_len , buf->allocator.state));
+      if ( buf->buffer )
+	buf->buffer_capacity = buf_len;
+    }
+
+  // call marshal to serialize data
+  buf->buffer_length = dds_message.marshal_cdr( (unsigned char*)buf->buffer, 0, (unsigned int)buf->buffer_capacity, 0, 0 );
+
+  return true;
+}
+  
+static bool deserialize( void * untyped_ros_msg,
+			 const rmw_serialized_message_t *buf )
+{
+  if (untyped_ros_msg == 0) {
+    fprintf(stderr, "deserialize: invalid ros message pointer\n");
+    return false;
+  } 
+  if ( !buf  ) {
+    fprintf(stderr, "deserialize: invalid buf pointer\n");
+    return false;
+  }
+  
+  @(spec.base_type.pkg_name)::@(subfolder)::dds_::@(spec.base_type.type)_ dds_message;
+  @(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type)*       ros_msg =
+    (@(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type)*)untyped_ros_msg;
+  
+  // call unmarshal
+  dds_message.unmarshal_cdr( (unsigned char*)buf->buffer, 0, (unsigned int)buf->buffer_length, 0, 0 );
+  
+  if ( !convert_dds_message_to_ros(&dds_message, ros_msg) ) {
+    return false;
+  }
+  
+  return true;
+}
+
+#include <new>
+  
+static void * alloc_ros_msg( rcutils_allocator_t * allocator )
+{
+  void * buf = allocator->allocate( sizeof(@(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type)), allocator->state );
+  if ( !buf )
+    return NULL;
+  @(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type) * ros_message =
+    new(buf) @(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type);
+
+  return ros_message;
+}
+  
+static void   free_ros_msg( void * ros_msg, rcutils_allocator_t * allocator )
+{
+  if ( ros_msg )
+    {
+      @(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type) * ros_message =
+        static_cast<@(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type) *>(ros_msg);
+      ros_message->@(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type)::~@(spec.base_type.type)();
+      allocator->deallocate( ros_msg, allocator->state );
+    }
+}
+
 static message_type_support_callbacks_t callbacks = {
   "@(spec.base_type.pkg_name)",
   "@(spec.base_type.type)",
   &register_type__@(spec.base_type.type),
   &publish__@(spec.base_type.type),
   &take__@(spec.base_type.type),
-  nullptr,
-  nullptr
+  convert_ros_message_to_dds__@(spec.base_type.type),
+  convert_dds_message_to_ros__@(spec.base_type.type),
+  serialize,
+  deserialize,
+  alloc_ros_msg,
+  free_ros_msg
 };
 
 static rosidl_message_type_support_t handle = {

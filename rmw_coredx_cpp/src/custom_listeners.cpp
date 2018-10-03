@@ -42,6 +42,7 @@ CustomDataReaderListener::add_information(const DDS::InstanceHandle_t handle,
   // store topic name and type name
   auto & topic_types = topic_names_and_types[topic_name];
   topic_types.insert(type_name);
+  // fprintf(stderr, "ADDING TOPICnTYPE( '%s', '%s') \n", topic_name.c_str(), type_name.c_str() );
   // store mapping to instance handle
   TopicDescriptor topic_descriptor;
   topic_descriptor.instance_handle = handle;
@@ -57,6 +58,7 @@ CustomDataReaderListener::remove_information(const DDS::InstanceHandle_t handle)
   for (auto it = topic_descriptors.begin(); it != topic_descriptors.end(); ++it) {
     if (it->instance_handle == handle) {
       // remove entries
+      // fprintf(stderr, "REMOVING TOPICnTYPE( '%s', '%s') \n", it->name.c_str(), it->type.c_str() );
       auto & topic_types = topic_names_and_types[it->name];
       topic_types.erase(topic_types.find(it->type));
       if (topic_types.empty()) {

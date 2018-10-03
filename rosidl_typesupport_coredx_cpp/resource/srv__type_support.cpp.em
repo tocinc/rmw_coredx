@@ -42,6 +42,8 @@ namespace typesupport_coredx_cpp
 void * create_requester__@(spec.srv_name)(
   void * untyped_participant,
   const char * service_name,
+  const char * req_topic_name,
+  const char * rep_topic_name,
   const void * untyped_datareader_qos,
   const void * untyped_datawriter_qos,
   void ** untyped_reader,
@@ -51,7 +53,7 @@ void * create_requester__@(spec.srv_name)(
   using RequesterType = DDS::rpc::Requester<
       @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Request_,
       @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Response_>;
-  if (!untyped_participant || !service_name || !untyped_reader) {
+  if (!untyped_participant || !service_name || !req_topic_name || !rep_topic_name || !untyped_reader) {
     return NULL;
   }
   auto _allocator = allocator ? allocator : &malloc;
@@ -63,6 +65,8 @@ void * create_requester__@(spec.srv_name)(
   requester_params.
   domain_participant(participant).
   service_name(service_name).
+  request_topic_name(req_topic_name).
+  reply_topic_name(rep_topic_name).
   datareader_qos(*datareader_qos).
   datawriter_qos(*datawriter_qos);
 
@@ -104,10 +108,10 @@ int64_t send_request__@(spec.srv_name)(
       @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Response_>;
   DDS::WriteSample<
     @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Request_> request;
-  const ROSRequestType & ros_request = *(
-    static_cast<const ROSRequestType *>(untyped_ros_request));
+  const ROSRequestType * ros_request = 
+    static_cast<const ROSRequestType *>(untyped_ros_request);
   @(spec.pkg_name)::srv::typesupport_coredx_cpp::convert_ros_message_to_dds(
-    ros_request, request.data());
+    ros_request, &request.data());
 
   RequesterType * requester = static_cast<RequesterType *>(untyped_requester);
 
@@ -120,6 +124,8 @@ int64_t send_request__@(spec.srv_name)(
 void * create_replier__@(spec.srv_name)(
   void * untyped_participant,
   const char * service_name,
+  const char * req_topic_name,
+  const char * rep_topic_name,
   const void * untyped_datareader_qos,
   const void * untyped_datawriter_qos,
   void ** untyped_reader,
@@ -129,7 +135,7 @@ void * create_replier__@(spec.srv_name)(
   using ReplierType = DDS::rpc::Replier<
       @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Request_,
       @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Response_>;
-  if (!untyped_participant || !service_name || !untyped_reader) {
+  if (!untyped_participant || !service_name || !req_topic_name || !rep_topic_name || !untyped_reader) {
     return NULL;
   }
   auto _allocator = allocator ? allocator : &malloc;
@@ -141,6 +147,8 @@ void * create_replier__@(spec.srv_name)(
   replier_params
   .domain_participant(participant)
   .service_name(service_name)
+  .request_topic_name(req_topic_name)
+  .reply_topic_name(rep_topic_name)
   .datareader_qos(*datareader_qos)
   .datawriter_qos(*datawriter_qos);
 
@@ -187,7 +195,7 @@ bool take_request__@(spec.srv_name)(
 
   ReplierType * replier = static_cast<ReplierType *>(untyped_replier);
 
-  ROSRequestType & ros_request = *static_cast<ROSRequestType *>(untyped_ros_request);
+  ROSRequestType * ros_request = static_cast<ROSRequestType *>(untyped_ros_request);
 
   DDS::Sample<@(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Request_> request;
   bool taken = replier->take_request(request);
@@ -199,7 +207,7 @@ bool take_request__@(spec.srv_name)(
   }
 
   bool converted =
-    @(spec.pkg_name)::srv::typesupport_coredx_cpp::convert_dds_message_to_ros(request.data(), ros_request);
+    @(spec.pkg_name)::srv::typesupport_coredx_cpp::convert_dds_message_to_ros(&request.data(), ros_request);
   if (!converted) {
     return false;
   }
@@ -224,7 +232,7 @@ bool take_response__@(spec.srv_name)(
 
   RequesterType * requester = static_cast<RequesterType *>(untyped_requester);
 
-  ROSResponseType & ros_response = *static_cast<ROSResponseType *>(untyped_ros_response);
+  ROSResponseType * ros_response = static_cast<ROSResponseType *>(untyped_ros_response);
 
   DDS::Sample<@(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Response_> response;
   bool received = requester->take_reply(response);
@@ -241,7 +249,7 @@ bool take_response__@(spec.srv_name)(
   request_header->sequence_number = sequence_number;
 
   bool converted =
-    @(spec.pkg_name)::srv::typesupport_coredx_cpp::convert_dds_message_to_ros(response.data(), ros_response);
+    @(spec.pkg_name)::srv::typesupport_coredx_cpp::convert_dds_message_to_ros(&response.data(), ros_response);
   return converted;
 }
 
@@ -257,9 +265,9 @@ bool send_response__@(spec.srv_name)(
   }
 
   DDS::WriteSample<@(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Response_> response;
-  ROSResponseType & ros_response = *(reinterpret_cast<ROSResponseType *>(untyped_ros_response));
+  ROSResponseType * ros_response = reinterpret_cast<ROSResponseType *>(untyped_ros_response);
   bool converted =
-    @(spec.pkg_name)::srv::typesupport_coredx_cpp::convert_ros_message_to_dds(ros_response, response.data());
+    @(spec.pkg_name)::srv::typesupport_coredx_cpp::convert_ros_message_to_dds(ros_response, &response.data());
   if (!converted) {
     return false;
   }

@@ -174,4 +174,17 @@ get_datawriter_qos(DDS::DomainParticipant  * participant,
   return true;
 }
 
+/* ************************************************
+ */
+const message_type_support_callbacks_t *
+get_callbacks(const rosidl_message_type_support_t * type_supports )
+{
+  const rosidl_message_type_support_t * ts; 
+  RMW_COREDX_EXTRACT_MESSAGE_TYPESUPPORT(type_supports, ts);
+  if ( ts )
+    return static_cast<const message_type_support_callbacks_t *>(ts->data);
+  else
+    return NULL;
+}
+  
 

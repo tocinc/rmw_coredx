@@ -52,11 +52,11 @@ set_log_level()
         {
           rcutils_ret_t ret = RCUTILS_RET_INVALID_ARGUMENT;
           if (strcmp( env, "DEBUG" ) == 0 )
-            ret =rcutils_logging_set_logger_level("rmw_coredx_cpp", RCUTILS_LOG_SEVERITY_DEBUG);
+            ret = rcutils_logging_set_logger_level("rmw_coredx_cpp", RCUTILS_LOG_SEVERITY_DEBUG);
           else if (strcmp( env, "INFO" ) == 0 )
-            ret =rcutils_logging_set_logger_level("rmw_coredx_cpp", RCUTILS_LOG_SEVERITY_INFO);
+            ret = rcutils_logging_set_logger_level("rmw_coredx_cpp", RCUTILS_LOG_SEVERITY_INFO);
           else if (strcmp( env, "WARN" ) == 0 )
-            ret =rcutils_logging_set_logger_level("rmw_coredx_cpp", RCUTILS_LOG_SEVERITY_WARN);
+            ret = rcutils_logging_set_logger_level("rmw_coredx_cpp", RCUTILS_LOG_SEVERITY_WARN);
           else if (strcmp( env, "ERROR" ) == 0 )
             ret = rcutils_logging_set_logger_level("rmw_coredx_cpp", RCUTILS_LOG_SEVERITY_ERROR);
           else if (strcmp( env, "FATAL" ) == 0 )

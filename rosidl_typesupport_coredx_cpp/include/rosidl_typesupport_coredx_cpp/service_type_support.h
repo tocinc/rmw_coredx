@@ -26,8 +26,12 @@ typedef struct service_type_support_callbacks_t
   const char * service_name;
   // Function to create a requester
   void * (*create_requester)(
-    void * participant, const char * service_name,
-    const void * datareader_qos, const void * datawriter_qos,
+    void * participant,
+    const char * service_name,
+    const char * req_topic_name,
+    const char * rep_topic_name,
+    const void * datareader_qos,
+    const void * datawriter_qos,
     void ** reader, void ** writer,
     void * (*allocator)(size_t));
   // Function to destroy a requester
@@ -35,8 +39,12 @@ typedef struct service_type_support_callbacks_t
     void * untyped_requester, void (* deallocator)(void *));
   // Function to create a replier
   void * (*create_replier)(
-    void * participant, const char * service_name,
-    const void * datareader_qos, const void * datawriter_qos,
+    void * participant,
+    const char * service_name,
+    const char * req_topic_name,
+    const char * rep_topic_name,
+    const void * datareader_qos,
+    const void * datawriter_qos,
     void ** reader, void ** writer,
     void * (*allocator)(size_t));
   // Function to destroy a replier

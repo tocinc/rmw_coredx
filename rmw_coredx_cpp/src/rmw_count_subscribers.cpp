@@ -69,12 +69,9 @@ rmw_count_subscribers( const rmw_node_t * node,
     return RMW_RET_ERROR;
   }
 
-  char * topic_str     = nullptr;
-  char * partition_str = nullptr;
-  rmw_coredx_process_topic_name(topic_name, false, &topic_str, &partition_str);
-
+  std::string pfx_topic_name = std::string(ros_topic_prefix) + topic_name;
   const auto & topic_names_and_types = node_info->subscriber_listener->topic_names_and_types;
-  auto it = topic_names_and_types.find(topic_str);
+  auto it = topic_names_and_types.find(pfx_topic_name.c_str());
   if (it == topic_names_and_types.end()) {
     *count = 0;
   } else {

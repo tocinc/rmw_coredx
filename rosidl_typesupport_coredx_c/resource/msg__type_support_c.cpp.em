@@ -590,6 +590,91 @@ finally:
 
   return false;
 }
+ 
+static bool serialize( const void    * untyped_ros_msg,
+		       rmw_serialized_message_t *buf )
+{
+  if (untyped_ros_msg == 0) {
+    fprintf(stderr, "serialize: invalid ros message pointer\n");
+    return false;
+  }
+  if ( !buf ) {
+    fprintf(stderr, "serialize: invalid buf pointer\n");
+    return false;
+  }
+
+  const __ros_msg_type * ros_message = static_cast<const __ros_msg_type *>(untyped_ros_msg);
+  __dds_msg_type dds_message;
+  
+  // ros data -> dds data
+  if (!convert_ros_to_dds(ros_message, &dds_message)) {
+    return false;
+  }
+  
+  // call marshal once to get required size
+  size_t buf_len = dds_message.marshal_cdr( NULL, 0, 0, 0, 0 );
+  
+  // allocate required buffer
+  if ( buf_len > buf->buffer_capacity )
+    {
+      if ( buf->buffer_capacity > 0 )
+	buf->allocator.deallocate( buf->buffer, buf->allocator.state );
+      buf->buffer = static_cast<char *>(buf->allocator.allocate(buf_len , buf->allocator.state));
+      if ( buf->buffer )
+	buf->buffer_capacity = buf_len;
+    }
+  
+  // call marshal again to serialize data
+  buf->buffer_length = dds_message.marshal_cdr( (unsigned char*)buf->buffer, (unsigned int)buf->buffer_capacity, 0, 0, 0 );
+
+  return true;
+}
+  
+static bool deserialize( void * untyped_ros_msg,
+			 const rmw_serialized_message_t *buf )
+{
+  if (untyped_ros_msg == 0) {
+    fprintf(stderr, "deserialize: invalid ros message pointer\n");
+    return false;
+  } 
+  if ( !buf  ) {
+    fprintf(stderr, "deserialize: invalid buf pointer\n");
+    return false;
+  }
+  
+  __dds_msg_type dds_message;
+  
+  // call unmarshal
+  dds_message.unmarshal_cdr( (unsigned char*)buf->buffer, 0, (unsigned int)buf->buffer_length, 0, 0 );
+  
+  if (!convert_dds_to_ros(&dds_message, untyped_ros_msg)) {
+    return false;
+  }
+  
+  return true;
+}
+
+#include <new>
+  
+static void * alloc_ros_msg( rcutils_allocator_t * allocator )
+{
+  void * buf = allocator->allocate( sizeof(__ros_msg_type), allocator->state );
+  if ( !buf )
+    return NULL;
+  __ros_msg_type * ros_message = new(buf) __ros_msg_type;
+  return ros_message;
+}
+  
+static void   free_ros_msg( void * ros_msg, rcutils_allocator_t * allocator )
+{
+  if ( ros_msg )
+    {
+      __ros_msg_type * ros_message = static_cast<__ros_msg_type *>(ros_msg);
+      ros_message->~__ros_msg_type();
+      allocator->deallocate( ros_msg, allocator->state );
+    }
+}
+  
 @
 @# // Collect the callback functions and provide a function to get the type support struct.
 
@@ -601,6 +686,10 @@ static message_type_support_callbacks_t __callbacks = {
   take,  // take
   convert_ros_to_dds,  // convert_ros_to_dds
   convert_dds_to_ros,  // convert_dds_to_ros
+  serialize,
+  deserialize,
+  alloc_ros_msg,
+  free_ros_msg
 };
 
 static rosidl_message_type_support_t __type_support = {
