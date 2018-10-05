@@ -106,7 +106,7 @@ CustomPublisherListener::on_data_available(DDS::DataReader * reader)
   for (uint32_t i = 0; i < data_seq.length(); ++i) {
     if (info_seq[i]->valid_data) {
       auto fqn = std::string("");
-      for (uint32_tj = 0; j < data_seq[i]->partition.name.length(); j++) {
+      for (uint32_t j = 0; j < data_seq[i]->partition.name.length(); j++) {
         fqn += data_seq[i]->partition.name[j];
         fqn += "/";
       }
@@ -154,7 +154,7 @@ CustomSubscriberListener::on_data_available(DDS::DataReader * reader)
   for (uint32_t i = 0; i < data_seq.length(); ++i) {
     if (info_seq[i]->valid_data) {
       auto fqn = std::string("");
-      for (uint32_tj = 0; j < data_seq[i]->partition.name.length(); j++) {
+      for (uint32_t j = 0; j < data_seq[i]->partition.name.length(); j++) {
         fqn += data_seq[i]->partition.name[j];
         fqn += "/";
       }
