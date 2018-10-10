@@ -27,6 +27,7 @@
 
 #include <cassert>
 #include <limits>
+#include <new>
 
 // Provides the rosidl_typesupport_coredx_c__identifier symbol declaration.
 #include "rosidl_typesupport_coredx_c/identifier.h"
@@ -653,8 +654,6 @@ static bool deserialize( void * untyped_ros_msg,
   
   return true;
 }
-
-#include <new>
   
 static void * alloc_ros_msg( rcutils_allocator_t * allocator )
 {
