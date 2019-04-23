@@ -94,7 +94,7 @@ rmw_coredx_process_service_name(
     allocator,
     "%s%s%s", request_prefix, service_name, "Request");
   if (!request_concat_str) {
-    RMW_SET_ERROR_MSG("could not allocate memory for request topic string")
+    RMW_SET_ERROR_MSG("could not allocate memory for request topic string");
     success = false;
     goto end;
   }
@@ -103,7 +103,7 @@ rmw_coredx_process_service_name(
     allocator,
     "%s%s%s", response_prefix, service_name, "Reply");
   if (!response_concat_str) {
-    RMW_SET_ERROR_MSG("could not allocate memory for response topic string")
+    RMW_SET_ERROR_MSG("could not allocate memory for response topic string");
     success = false;
     goto end;
   }

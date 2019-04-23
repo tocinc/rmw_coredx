@@ -14,7 +14,7 @@
 #define _GLIBCXX_USE_CXX11_ABI 0
 #endif
 
-#include "@(spec.pkg_name)/srv/@(get_header_filename_from_msg_name(spec.srv_name))__rosidl_typesupport_coredx_cpp.hpp"
+#include "@(spec.pkg_name)/@(subfolder)/@(get_header_filename_from_msg_name(spec.srv_name))__rosidl_typesupport_coredx_cpp.hpp"
 
 #include <dds/dds.hh>
 #include <dds/request_reply.hh>
@@ -24,16 +24,16 @@
 #include "rosidl_typesupport_coredx_cpp/service_type_support.h"
 #include "rosidl_typesupport_coredx_cpp/service_type_support_decl.hpp"
 
-#include "@(spec.pkg_name)/srv/@(get_header_filename_from_msg_name(spec.srv_name))__struct.hpp"
-#include "@(spec.pkg_name)/srv/dds_coredx/@(spec.srv_name)_Request_TypeSupport.hh"
-#include "@(spec.pkg_name)/srv/@(get_header_filename_from_msg_name(spec.srv_name + '_Request'))__rosidl_typesupport_coredx_cpp.hpp"
-#include "@(spec.pkg_name)/srv/dds_coredx/@(spec.srv_name)_Response_TypeSupport.hh"
-#include "@(spec.pkg_name)/srv/@(get_header_filename_from_msg_name(spec.srv_name + '_Response'))__rosidl_typesupport_coredx_cpp.hpp"
+#include "@(spec.pkg_name)/@(subfolder)/@(get_header_filename_from_msg_name(spec.srv_name))__struct.hpp"
+#include "@(spec.pkg_name)/@(subfolder)/dds_coredx/@(spec.srv_name)_Request_TypeSupport.hh"
+#include "@(spec.pkg_name)/@(subfolder)/@(get_header_filename_from_msg_name(spec.srv_name + '_Request'))__rosidl_typesupport_coredx_cpp.hpp"
+#include "@(spec.pkg_name)/@(subfolder)/dds_coredx/@(spec.srv_name)_Response_TypeSupport.hh"
+#include "@(spec.pkg_name)/@(subfolder)/@(get_header_filename_from_msg_name(spec.srv_name + '_Response'))__rosidl_typesupport_coredx_cpp.hpp"
 
 namespace @(spec.pkg_name)
 {
 
-namespace srv
+namespace @(subfolder)
 {
 
 namespace typesupport_coredx_cpp
@@ -51,8 +51,8 @@ void * create_requester__@(spec.srv_name)(
   void * (*allocator)(size_t))
 {
   using RequesterType = DDS::rpc::Requester<
-      @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Request_,
-      @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Response_>;
+      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Request_,
+      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Response_>;
   if (!untyped_participant || !service_name || !req_topic_name || !rep_topic_name || !untyped_reader) {
     return NULL;
   }
@@ -88,8 +88,8 @@ const char * destroy_requester__@(spec.srv_name)(
   void (*deallocator)(void *))
 {
   using RequesterType = DDS::rpc::Requester<
-      @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Request_,
-      @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Response_>;
+      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Request_,
+      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Response_>;
   auto requester = static_cast<RequesterType *>(untyped_requester);
 
   requester->~RequesterType();
@@ -102,15 +102,15 @@ int64_t send_request__@(spec.srv_name)(
   void * untyped_requester,
   const void * untyped_ros_request)
 {
-  using ROSRequestType = @(spec.pkg_name)::srv::@(spec.srv_name)_Request;
+  using ROSRequestType = @(spec.pkg_name)::@(subfolder)::@(spec.srv_name)_Request;
   using RequesterType = DDS::rpc::Requester<
-      @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Request_,
-      @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Response_>;
+      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Request_,
+      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Response_>;
   DDS::WriteSample<
-    @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Request_> request;
+    @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Request_> request;
   const ROSRequestType * ros_request = 
     static_cast<const ROSRequestType *>(untyped_ros_request);
-  @(spec.pkg_name)::srv::typesupport_coredx_cpp::convert_ros_message_to_dds(
+  @(spec.pkg_name)::@(subfolder)::typesupport_coredx_cpp::convert_ros_message_to_dds(
     ros_request, &request.data());
 
   RequesterType * requester = static_cast<RequesterType *>(untyped_requester);
@@ -133,8 +133,8 @@ void * create_replier__@(spec.srv_name)(
   void * (*allocator)(size_t))
 {
   using ReplierType = DDS::rpc::Replier<
-      @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Request_,
-      @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Response_>;
+      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Request_,
+      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Response_>;
   if (!untyped_participant || !service_name || !req_topic_name || !rep_topic_name || !untyped_reader) {
     return NULL;
   }
@@ -170,8 +170,8 @@ const char * destroy_replier__@(spec.srv_name)(
   void (*deallocator)(void *))
 {
   using ReplierType = DDS::rpc::Replier<
-      @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Request_,
-      @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Response_>;
+      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Request_,
+      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Response_>;
   auto replier = static_cast<ReplierType *>(untyped_replier);
 
   replier->~ReplierType();
@@ -186,9 +186,9 @@ bool take_request__@(spec.srv_name)(
   void * untyped_ros_request)
 {
   using ReplierType = DDS::rpc::Replier<
-      @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Request_,
-      @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Response_>;
-  using ROSRequestType = @(spec.pkg_name)::srv::@(spec.srv_name)_Request;
+      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Request_,
+      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Response_>;
+  using ROSRequestType = @(spec.pkg_name)::@(subfolder)::@(spec.srv_name)_Request;
   if (!untyped_replier || !request_header || !untyped_ros_request) {
     return false;
   }
@@ -197,7 +197,7 @@ bool take_request__@(spec.srv_name)(
 
   ROSRequestType * ros_request = static_cast<ROSRequestType *>(untyped_ros_request);
 
-  DDS::Sample<@(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Request_> request;
+  DDS::Sample<@(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Request_> request;
   bool taken = replier->take_request(request);
   if (!taken) {
     return false;
@@ -207,7 +207,7 @@ bool take_request__@(spec.srv_name)(
   }
 
   bool converted =
-    @(spec.pkg_name)::srv::typesupport_coredx_cpp::convert_dds_message_to_ros(&request.data(), ros_request);
+    @(spec.pkg_name)::@(subfolder)::typesupport_coredx_cpp::convert_dds_message_to_ros(&request.data(), ros_request);
   if (!converted) {
     return false;
   }
@@ -224,8 +224,8 @@ bool take_response__@(spec.srv_name)(
   rmw_request_id_t * request_header,
   void * untyped_ros_response)
 {
-  using RequesterType = DDS::rpc::Requester<@(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Request_, @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Response_>;
-  using ROSResponseType = @(spec.pkg_name)::srv::@(spec.srv_name)_Response;
+  using RequesterType = DDS::rpc::Requester<@(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Request_, @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Response_>;
+  using ROSResponseType = @(spec.pkg_name)::@(subfolder)::@(spec.srv_name)_Response;
   if (!untyped_requester || !request_header || !untyped_ros_response) {
     return false;
   }
@@ -234,7 +234,7 @@ bool take_response__@(spec.srv_name)(
 
   ROSResponseType * ros_response = static_cast<ROSResponseType *>(untyped_ros_response);
 
-  DDS::Sample<@(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Response_> response;
+  DDS::Sample<@(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Response_> response;
   bool received = requester->take_reply(response);
   if (!received) {
     return false;
@@ -249,7 +249,7 @@ bool take_response__@(spec.srv_name)(
   request_header->sequence_number = sequence_number;
 
   bool converted =
-    @(spec.pkg_name)::srv::typesupport_coredx_cpp::convert_dds_message_to_ros(&response.data(), ros_response);
+    @(spec.pkg_name)::@(subfolder)::typesupport_coredx_cpp::convert_dds_message_to_ros(&response.data(), ros_response);
   return converted;
 }
 
@@ -258,16 +258,16 @@ bool send_response__@(spec.srv_name)(
   const rmw_request_id_t * request_header,
   const void * untyped_ros_response)
 {
-  using ROSResponseType = const @(spec.pkg_name)::srv::@(spec.srv_name)_Response;
-  using ReplierType = DDS::rpc::Replier<@(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Request_, @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Response_>;
+  using ROSResponseType = const @(spec.pkg_name)::@(subfolder)::@(spec.srv_name)_Response;
+  using ReplierType = DDS::rpc::Replier<@(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Request_, @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Response_>;
   if (!untyped_replier || !request_header || !untyped_ros_response) {
     return false;
   }
 
-  DDS::WriteSample<@(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Response_> response;
+  DDS::WriteSample<@(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Response_> response;
   ROSResponseType * ros_response = reinterpret_cast<ROSResponseType *>(untyped_ros_response);
   bool converted =
-    @(spec.pkg_name)::srv::typesupport_coredx_cpp::convert_ros_message_to_dds(ros_response, &response.data());
+    @(spec.pkg_name)::@(subfolder)::typesupport_coredx_cpp::convert_ros_message_to_dds(ros_response, &response.data());
   if (!converted) {
     return false;
   }
@@ -293,8 +293,8 @@ void * get_request_datawriter__@(spec.srv_name)(void * untyped_requester)
     return NULL;
   }
   using RequesterType = DDS::rpc::Requester<
-      @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Request_,
-      @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Response_>;
+      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Request_,
+      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Response_>;
   RequesterType * requester = reinterpret_cast<RequesterType *>(untyped_requester);
   return requester->get_request_datawriter();
 }
@@ -306,8 +306,8 @@ void * get_reply_datareader__@(spec.srv_name)(void * untyped_requester)
     return NULL;
   }
   using RequesterType = DDS::rpc::Requester<
-      @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Request_,
-      @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Response_>;
+      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Request_,
+      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Response_>;
   RequesterType * requester = reinterpret_cast<RequesterType *>(untyped_requester);
   return requester->get_reply_datareader();
 }
@@ -319,8 +319,8 @@ void * get_request_datareader__@(spec.srv_name)(void * untyped_replier)
     return NULL;
   }
   using ReplierType = DDS::rpc::Replier<
-      @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Request_,
-      @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Response_>;
+      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Request_,
+      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Response_>;
   ReplierType * replier = reinterpret_cast<ReplierType *>(untyped_replier);
   return replier->get_request_datareader();
 }
@@ -332,8 +332,8 @@ void * get_reply_datawriter__@(spec.srv_name)(void * untyped_replier)
     return NULL;
   }
   using ReplierType = DDS::rpc::Replier<
-      @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Request_,
-      @(spec.pkg_name)::srv::dds_::@(spec.srv_name)_Response_>;
+      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Request_,
+      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Response_>;
   ReplierType * replier = reinterpret_cast<ReplierType *>(untyped_replier);
   return replier->get_reply_datawriter();
 }
@@ -363,7 +363,7 @@ static rosidl_service_type_support_t handle = {
 
 }  // namespace typesupport_coredx_cpp
 
-}  // namespace srv
+}  // namespace @(subfolder)
 
 }  // namespace @(spec.pkg_name)
 
@@ -373,9 +373,9 @@ namespace rosidl_typesupport_coredx_cpp
 template<>
 ROSIDL_TYPESUPPORT_COREDX_CPP_EXPORT_@(spec.pkg_name)
 const rosidl_service_type_support_t *
-get_service_type_support_handle<@(spec.pkg_name)::srv::@(spec.srv_name)>()
+get_service_type_support_handle<@(spec.pkg_name)::@(subfolder)::@(spec.srv_name)>()
 {
-  return &@(spec.pkg_name)::srv::typesupport_coredx_cpp::handle;
+  return &@(spec.pkg_name)::@(subfolder)::typesupport_coredx_cpp::handle;
 }
 
 }  // namespace rosidl_typesupport_coredx_cpp
@@ -386,8 +386,8 @@ extern "C"
 #endif
 
 const rosidl_service_type_support_t *
-ROSIDL_TYPESUPPORT_INTERFACE__SERVICE_SYMBOL_NAME(rosidl_typesupport_coredx_cpp, @(spec.pkg_name), @(spec.srv_name))() {
-  return &@(spec.pkg_name)::srv::typesupport_coredx_cpp::handle;
+ROSIDL_TYPESUPPORT_INTERFACE__SERVICE_SYMBOL_NAME(rosidl_typesupport_coredx_cpp, @(spec.pkg_name), @(subfolder), @(spec.srv_name))() {
+  return &@(spec.pkg_name)::@(subfolder)::typesupport_coredx_cpp::handle;
 }
 
 #ifdef __cplusplus

@@ -74,7 +74,8 @@ void CustomDataReaderListener::trigger_graph_guard_condition()
 {
   rmw_ret_t ret = rmw_trigger_guard_condition(graph_guard_condition_);
   if (ret != RMW_RET_OK) {
-    fprintf(stderr, "failed to trigger graph guard condition: %s\n", rmw_get_error_string_safe());
+    rcutils_error_string_t err = rmw_get_error_string();
+    fprintf(stderr, "failed to trigger graph guard condition: %s\n", err.str );
   }
 }
 

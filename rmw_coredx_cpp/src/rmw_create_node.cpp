@@ -71,12 +71,20 @@ set_log_level()
  */
 rmw_node_t *
 rmw_create_node (
-  const char * name,
-  const char * namespace_,
-  size_t       domain_id,
+  rmw_context_t * context,
+  const char    * name,
+  const char    * namespace_,
+  size_t          domain_id,
   const rmw_node_security_options_t * security_options )
 {
   (void)security_options; /* todo ... */
+  RCUTILS_CHECK_ARGUMENT_FOR_NULL(context, NULL);
+  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
+    init context,
+    context->implementation_identifier,
+    toc_coredx_identifier,
+    // TODO(wjwwood): replace this with RMW_RET_INCORRECT_RMW_IMPLEMENTATION when refactored
+    return NULL);
 
   DDS::DomainParticipantFactory * dpf_ = DDS::DomainParticipantFactory::get_instance();
   if (!dpf_) {
@@ -98,6 +106,22 @@ rmw_create_node (
   if ( name_len > COREDX_ENTITY_NAME_MAX) name_len = COREDX_ENTITY_NAME_MAX;
   memcpy( dp_qos.entity_name.value, name, name_len );
   dp_qos.entity_name.value[COREDX_ENTITY_NAME_MAX-1] = '\0';
+  // the node name is also set in the user_data
+  size_t length = strlen(name) + strlen("name=;") +
+    strlen(namespace_) + strlen("namespace=;") + 1;
+   bool success = dp_qos.user_data.value.resize(length);
+  if (!success) {
+    RMW_SET_ERROR_MSG("failed to resize participant user_data");
+    return NULL;
+  }
+  int written =
+    snprintf(reinterpret_cast<char *>(&dp_qos.user_data.value[0]),
+      length, "name=%s;namespace=%s;", name, namespace_);
+  if (written < 0 || written > static_cast<int>(length) - 1) {
+    RMW_SET_ERROR_MSG("failed to populate user_data buffer");
+    return NULL;
+  }
+  
   DDS::DomainId_t           domain = static_cast<DDS::DomainId_t>(domain_id);
   DDS::DomainParticipant  * participant =
     dpf_->create_participant(domain,
@@ -125,7 +149,7 @@ rmw_create_node (
   }
   
   // graph guard condition 
-  graph_guard_condition = rmw_create_guard_condition( );
+  graph_guard_condition = rmw_create_guard_condition( context );
   if (!graph_guard_condition) {
     RMW_SET_ERROR_MSG("failed to create graph guard condition");
     goto fail;

@@ -46,43 +46,40 @@ foreach(_idl_file ${rosidl_generate_interfaces_IDL_FILES})
 endforeach()
 
 set(_output_path "${CMAKE_CURRENT_BINARY_DIR}/rosidl_typesupport_coredx_cpp/${PROJECT_NAME}")
-set(_generated_msg_files "")
-set(_generated_external_msg_files "")
-set(_generated_srv_files "")
-set(_generated_external_srv_files "")
+set(_generated_files "")
+set(_generated_external_files "")
 foreach(_idl_file ${rosidl_generate_interfaces_IDL_FILES})
   get_filename_component(_extension "${_idl_file}" EXT)
+  get_filename_component(_parent_folder "${_idl_file}" DIRECTORY)
+  get_filename_component(_parent_folder "${_parent_folder}" NAME)
   get_filename_component(_msg_name "${_idl_file}" NAME_WE)
   string_camel_case_to_lower_case_underscore("${_msg_name}" _header_name)
   if(_extension STREQUAL ".msg")
-    get_filename_component(_parent_folder "${_idl_file}" DIRECTORY)
-    get_filename_component(_parent_folder "${_parent_folder}" NAME)
-    if(_parent_folder STREQUAL "msg")
-      set(_var1 "_generated_external_msg_files")
-      set(_var2 "_generated_msg_files")
-    elseif(_parent_folder STREQUAL "srv")
-      set(_var1 "_generated_external_srv_files")
-      set(_var2 "_generated_srv_files")
-    else()
+    set(_allowed_parent_folders "msg" "srv" "action")
+    if(NOT _parent_folder IN_LIST _allowed_parent_folders)
       message(FATAL_ERROR "Interface file with unknown parent folder: ${_idl_file}")
     endif()
-
-    list(APPEND ${_var1} "${_output_path}/${_parent_folder}/dds_coredx/${_msg_name}_.hh")
-    list(APPEND ${_var1} "${_output_path}/${_parent_folder}/dds_coredx/${_msg_name}_.cc")
-    list(APPEND ${_var1} "${_output_path}/${_parent_folder}/dds_coredx/${_msg_name}_DataReader.hh")
-    list(APPEND ${_var1} "${_output_path}/${_parent_folder}/dds_coredx/${_msg_name}_DataReader.cc")
-    list(APPEND ${_var1} "${_output_path}/${_parent_folder}/dds_coredx/${_msg_name}_DataWriter.hh")
-    list(APPEND ${_var1} "${_output_path}/${_parent_folder}/dds_coredx/${_msg_name}_DataWriter.cc")
-    list(APPEND ${_var1} "${_output_path}/${_parent_folder}/dds_coredx/${_msg_name}_TypeSupport.hh")
-    list(APPEND ${_var1} "${_output_path}/${_parent_folder}/dds_coredx/${_msg_name}_TypeSupport.cc")
-    list(APPEND ${_var2} "${_output_path}/${_parent_folder}/${_header_name}__rosidl_typesupport_coredx_cpp.hpp")
-    list(APPEND ${_var2} "${_output_path}/${_parent_folder}/dds_coredx/${_header_name}__type_support.cpp")
+    list(APPEND _generated_external_files "${_output_path}/${_parent_folder}/dds_coredx/${_msg_name}_.hh")
+    list(APPEND _generated_external_files "${_output_path}/${_parent_folder}/dds_coredx/${_msg_name}_.cc")
+    list(APPEND _generated_external_files "${_output_path}/${_parent_folder}/dds_coredx/${_msg_name}_DataReader.hh")
+    list(APPEND _generated_external_files "${_output_path}/${_parent_folder}/dds_coredx/${_msg_name}_DataReader.cc")
+    list(APPEND _generated_external_files "${_output_path}/${_parent_folder}/dds_coredx/${_msg_name}_DataWriter.hh")
+    list(APPEND _generated_external_files "${_output_path}/${_parent_folder}/dds_coredx/${_msg_name}_DataWriter.cc")
+    list(APPEND _generated_external_files "${_output_path}/${_parent_folder}/dds_coredx/${_msg_name}_TypeSupport.hh")
+    list(APPEND _generated_external_files "${_output_path}/${_parent_folder}/dds_coredx/${_msg_name}_TypeSupport.cc")
+    list(APPEND _generated_files "${_output_path}/${_parent_folder}/${_header_name}__rosidl_typesupport_coredx_cpp.hpp")
+    list(APPEND _generated_files "${_output_path}/${_parent_folder}/dds_coredx/${_header_name}__type_support.cpp")
   elseif(_extension STREQUAL ".srv")
-    list(APPEND _generated_srv_files "${_output_path}/srv/${_header_name}__rosidl_typesupport_coredx_cpp.hpp")
-    list(APPEND _generated_srv_files "${_output_path}/srv/dds_coredx/${_header_name}__type_support.cpp")
+    set(_allowed_parent_folders "srv" "action")
+    if(NOT _parent_folder IN_LIST _allowed_parent_folders)
+      message(FATAL_ERROR "Interface file with unknown parent folder: ${_idl_file}")
+    endif()
+    list(APPEND _generated_files "${_output_path}/${_parent_folder}/${_header_name}__rosidl_typesupport_coredx_cpp.hpp")
+    list(APPEND _generated_files "${_output_path}/${_parent_folder}/dds_coredx/${_header_name}__type_support.cpp")
   else()
     message(FATAL_ERROR "Interface file with unknown extension: ${_idl_file}")
   endif()
+
 endforeach()
 
 # If not on Windows, disable some warnings with TOC CoreDX DDS's generated code
@@ -109,7 +106,7 @@ if(NOT WIN32)
   endif()
   if(NOT _coredx_compile_flags STREQUAL "")
     string(REPLACE ";" " " _coredx_compile_flags "${_coredx_compile_flags}")
-    foreach(_gen_file ${_generated_external_msg_files} ${_generated_external_srv_files})
+    foreach(_gen_file ${_generated_external_files} )
       set_source_files_properties("${_gen_file}"
       PROPERTIES COMPILE_FLAGS "${_coredx_compile_flags}")
     endforeach()
@@ -145,11 +142,14 @@ set(target_dependencies
   ${_dependency_files})
 foreach(dep ${target_dependencies})
   if(NOT EXISTS "${dep}")
-    message(FATAL_ERROR "Target dependency '${dep}' does not exist")
+    get_property(is_generated SOURCE "${dep}" PROPERTY GENERATED)
+    if(NOT ${_is_generated})
+      message(FATAL_ERROR "Target dependency '${dep}' does not exist")
+    endif()
   endif()
 endforeach()
 
-set(generator_arguments_file "${CMAKE_BINARY_DIR}/rosidl_typesupport_coredx_cpp__arguments.json")
+set(generator_arguments_file "${CMAKE_CURRENT_BINARY_DIR}/rosidl_typesupport_coredx_cpp__arguments.json")
 rosidl_write_generator_arguments(
   "${generator_arguments_file}"
   PACKAGE_NAME "${PROJECT_NAME}"
@@ -163,7 +163,7 @@ rosidl_write_generator_arguments(
 
 set(_idl_pp "${CoreDX_DDSGEN}")
 add_custom_command(
-  OUTPUT ${_generated_msg_files} ${_generated_external_msg_files} ${_generated_srv_files} ${_generated_external_srv_files}
+  OUTPUT ${_generated_files} ${_generated_external_files} 
   COMMAND ${PYTHON_EXECUTABLE} ${rosidl_typesupport_coredx_cpp_BIN}
   --generator-arguments-file "${generator_arguments_file}"
   --dds-interface-base-path "${_dds_idl_base_path}"
@@ -191,7 +191,7 @@ endif()
 
 link_directories(${CoreDX_LIBRARY_DIRS})
 add_library(${rosidl_generate_interfaces_TARGET}${_target_suffix} SHARED
-  ${_generated_msg_files} ${_generated_external_msg_files} ${_generated_srv_files} ${_generated_external_srv_files})
+  ${_generated_files} ${_generated_external_files})
 if(rosidl_generate_interfaces_LIBRARY_NAME)
   set_target_properties(${rosidl_generate_interfaces_TARGET}${_target_suffix}
     PROPERTIES OUTPUT_NAME "${rosidl_generate_interfaces_LIBRARY_NAME}${_target_suffix}")
@@ -239,15 +239,20 @@ ament_target_dependencies(${rosidl_generate_interfaces_TARGET}${_target_suffix}
 foreach(_pkg_name ${rosidl_generate_interfaces_DEPENDENCY_PACKAGE_NAMES})
   set(_msg_include_dir "${${_pkg_name}_DIR}/../../../include/${_pkg_name}/msg/dds_coredx")
   set(_srv_include_dir "${${_pkg_name}_DIR}/../../../include/${_pkg_name}/srv/dds_coredx")
+  set(_action_include_dir "${${_pkg_name}_DIR}/../../../include/${_pkg_name}/action/dds_coredx")
   normalize_path(_msg_include_dir "${_msg_include_dir}")
   normalize_path(_srv_include_dir "${_srv_include_dir}")
+  normalize_path(_action_include_dir "${_action_include_dir}")
   target_include_directories(${rosidl_generate_interfaces_TARGET}${_target_suffix}
     PUBLIC
     "${_msg_include_dir}"
     "${_srv_include_dir}"
+    "${_action_include_dir}"
   )
   ament_target_dependencies(${rosidl_generate_interfaces_TARGET}${_target_suffix}
     ${_pkg_name})
+  target_link_libraries(${rosidl_generate_interfaces_TARGET}${_target_suffix}
+    ${${_pkg_name}_LIBRARIES${_target_suffix}})
 endforeach()
 
 add_dependencies(
@@ -271,10 +276,8 @@ if(NOT rosidl_generate_interfaces_SKIP_INSTALL)
   )
 
   if(
-    NOT _generated_msg_files STREQUAL "" OR
-    NOT _generated_external_msg_files STREQUAL "" OR
-    NOT _generated_srv_files STREQUAL "" OR
-    NOT _generated_external_srv_files STREQUAL ""
+    NOT _generated_files STREQUAL "" OR
+    NOT _generated_external_files STREQUAL ""
   )
     ament_export_include_directories(include)
   endif()
@@ -286,15 +289,16 @@ if(NOT rosidl_generate_interfaces_SKIP_INSTALL)
     RUNTIME DESTINATION bin
   )
 
-  ament_export_libraries(${rosidl_generate_interfaces_TARGET}${_target_suffix})
+  rosidl_export_typesupport_libraries(${_target_suffix}
+    ${rosidl_generate_interfaces_TARGET}${_target_suffix})
 endif()
 
 if(BUILD_TESTING AND rosidl_generate_interfaces_ADD_LINTER_TESTS)
-  if(NOT _generated_msg_files STREQUAL "" OR NOT _generated_srv_files STREQUAL "")
+  if(NOT _generated_files STREQUAL "" )
     find_package(ament_cmake_cppcheck REQUIRED)
     ament_cppcheck(
       TESTNAME "cppcheck_rosidl_typesupport_coredx_cpp"
-      ${_generated_msg_files} ${_generated_srv_files})
+      ${_generated_files} )
 
     find_package(ament_cmake_cpplint REQUIRED)
     get_filename_component(_cpplint_root "${_output_path}" DIRECTORY)
@@ -303,14 +307,14 @@ if(BUILD_TESTING AND rosidl_generate_interfaces_ADD_LINTER_TESTS)
       # the generated code might contain longer lines for templated types
       MAX_LINE_LENGTH 999
       ROOT "${_cpplint_root}"
-      ${_generated_msg_files} ${_generated_srv_files})
+      ${_generated_files} )
 
     find_package(ament_cmake_uncrustify REQUIRED)
     ament_uncrustify(
       TESTNAME "uncrustify_rosidl_typesupport_coredx_cpp"
       # the generated code might contain longer lines for templated types
-      MAX_LINE_LENGTH 999
-      ${_generated_msg_files} ${_generated_srv_files})
+      MAX_LINE_LENGTH 0
+      ${_generated_files} )
   endif()
 endif()
 

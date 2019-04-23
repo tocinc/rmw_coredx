@@ -16,7 +16,7 @@
 #ifndef ROSIDL_TYPESUPPORT_COREDX_CPP__VISIBILITY_CONTROL_H_
 #define ROSIDL_TYPESUPPORT_COREDX_CPP__VISIBILITY_CONTROL_H_
 
-#if __cplusplus
+#ifdef __cplusplus
 extern "C"
 {
 #endif
@@ -50,7 +50,7 @@ extern "C"
   #endif
 #endif
 
-#if __cplusplus
+#ifdef __cplusplus
 }
 #endif
 

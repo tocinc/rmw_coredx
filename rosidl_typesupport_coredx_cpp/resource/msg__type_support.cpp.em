@@ -18,6 +18,8 @@
 #include <limits>
 #include <stdexcept>
 
+#include "rcutils/types/uint8_array.h"
+
 #include "rosidl_typesupport_cpp/message_type_support.hpp"
 
 #include "rosidl_typesupport_coredx_cpp/identifier.hpp"
@@ -390,7 +392,7 @@ static bool serialize( const void    * untyped_ros_msg,
     {
       if ( buf->buffer_capacity > 0 )
 	buf->allocator.deallocate( buf->buffer, buf->allocator.state );
-      buf->buffer = static_cast<char *>(buf->allocator.allocate(buf_len , buf->allocator.state));
+      buf->buffer = static_cast<unsigned char *>(buf->allocator.allocate(buf_len , buf->allocator.state));
       if ( buf->buffer )
 	buf->buffer_capacity = buf_len;
     }

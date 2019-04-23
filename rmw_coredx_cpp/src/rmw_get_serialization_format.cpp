@@ -1,4 +1,4 @@
-// Copyright 2016 Open Source Robotics Foundation, Inc.
+// Copyright 2015 Twin Oaks Computing, Inc.
 // Modifications copyright (C) 2017 Twin Oaks Computing, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,21 +13,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef ROSIDL_TYPESUPPORT_COREDX_C__IDENTIFIER_H_
-#define ROSIDL_TYPESUPPORT_COREDX_C__IDENTIFIER_H_
+#include <rmw/rmw.h>
 
-#include "rosidl_typesupport_coredx_c/visibility_control.h"
 
-#ifdef __cplusplus
-extern "C"
-{
+#if defined(__cplusplus)
+extern "C" {
 #endif
 
-ROSIDL_TYPESUPPORT_COREDX_C_PUBLIC
-extern const char * rosidl_typesupport_coredx_c__identifier;
+  /* ************************************************
+   */
+  static const char * toc_coredx_serialization_format = "xcdr";
+  
+  /* ************************************************
+   */
+  const char *
+  rmw_get_serialization_format()
+  {
+    return toc_coredx_serialization_format;
+  }
 
-#ifdef __cplusplus
-}
+#if defined(__cplusplus)
+}  // extern "C"
 #endif
 
-#endif  // ROSIDL_TYPESUPPORT_COREDX_C__IDENTIFIER_H_

@@ -77,8 +77,8 @@ _demangle_service_from_topic( const std::string & topic_name )
   size_t suffix_position = topic_name.rfind(suffix);
   if (suffix_position == std::string::npos) {
     RCUTILS_LOG_WARN_NAMED("rmw_coredx_cpp",
-      "service topic has prefix but no suffix"
-      ", report this: '%s'", topic_name.c_str())
+			   "service topic has prefix but no suffix"
+			   ", report this: '%s'", topic_name.c_str());
     return "";
   }
   // strip off the suffix first
@@ -111,8 +111,8 @@ _demangle_service_type_only(const std::string & dds_type_name)
     if (suffix_position != std::string::npos) {
       if (dds_type_name.length() - suffix_position - suffix.length() != 0) {
         RCUTILS_LOG_WARN_NAMED("rmw_coredx_cpp",
-          "service type contains '::srv::dds_::' and a suffix, but not at the end"
-          ", report this: '%s'", dds_type_name.c_str())
+			       "service type contains '::srv::dds_::' and a suffix, but not at the end"
+			       ", report this: '%s'", dds_type_name.c_str());
         continue;
       }
       found_suffix = suffix;
@@ -121,8 +121,8 @@ _demangle_service_type_only(const std::string & dds_type_name)
   }
   if (suffix_position == std::string::npos) {
     RCUTILS_LOG_WARN_NAMED("rmw_coredx_cpp",
-      "service type contains '::srv::dds_::' but does not have a suffix"
-      ", report this: '%s'", dds_type_name.c_str())
+			   "service type contains '::srv::dds_::' but does not have a suffix"
+			   ", report this: '%s'", dds_type_name.c_str());
     return "";
   }
   std::string retval;
@@ -147,7 +147,7 @@ rmw_get_service_names_and_types(
                                 rmw_names_and_types_t * service_names_and_types)
 {
   if (!allocator) {
-    RMW_SET_ERROR_MSG("allocator is null")
+    RMW_SET_ERROR_MSG("allocator is null");
     return RMW_RET_INVALID_ARGUMENT;
   }
   if (!node) {
@@ -223,7 +223,7 @@ rmw_get_service_names_and_types(
     auto fail_cleanup = [&service_names_and_types]() {
         rmw_ret_t rmw_ret = rmw_names_and_types_fini(service_names_and_types);
         if (rmw_ret != RMW_RET_OK) {
-          RCUTILS_LOG_ERROR("error during report of error: %s", rmw_get_error_string_safe())
+          RCUTILS_LOG_ERROR("error during report of error: %s", rmw_get_error_string().str);
         }
       };
     // For each service, store the name, initialize the string array for types, and store all types
@@ -233,7 +233,7 @@ rmw_get_service_names_and_types(
 
       char * service_name = rcutils_strdup(service_n_types.first.c_str(), *allocator);
       if (!service_name) {
-        RMW_SET_ERROR_MSG_ALLOC("failed to allocate memory for service name", *allocator);
+        RMW_SET_ERROR_MSG("failed to allocate memory for service name");
         fail_cleanup();
         return RMW_RET_BAD_ALLOC;
       }
@@ -245,7 +245,7 @@ rmw_get_service_names_and_types(
           service_n_types.second.size(),
           allocator);
         if (rcutils_ret != RCUTILS_RET_OK) {
-          RMW_SET_ERROR_MSG(rcutils_get_error_string_safe())
+          RMW_SET_ERROR_MSG(rcutils_get_error_string().str);
           fail_cleanup();
           return rmw_convert_rcutils_ret_to_rmw_ret(rcutils_ret);
         }
@@ -255,7 +255,7 @@ rmw_get_service_names_and_types(
       for (const auto & type : service_n_types.second) {
         char * type_name = rcutils_strdup(type.c_str(), *allocator);
         if (!type_name) {
-          RMW_SET_ERROR_MSG_ALLOC("failed to allocate memory for type name", *allocator)
+          RMW_SET_ERROR_MSG("failed to allocate memory for type name");
           fail_cleanup();
           return RMW_RET_BAD_ALLOC;
         }

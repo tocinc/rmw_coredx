@@ -39,13 +39,21 @@ extern "C" {
 /* ************************************************
  */
 rmw_guard_condition_t *
-rmw_create_guard_condition( )
+rmw_create_guard_condition(rmw_context_t * context)
 {
   RCUTILS_LOG_DEBUG_NAMED(
     "rmw_coredx_cpp",
     "%s[ begin ]",
     __FUNCTION__ );
-  
+
+  RCUTILS_CHECK_ARGUMENT_FOR_NULL(context, NULL);
+  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
+    init context,
+    context->implementation_identifier,
+    toc_coredx_identifier,
+    // TODO(wjwwood): replace this with RMW_RET_INCORRECT_RMW_IMPLEMENTATION when refactored
+    return NULL);
+
   rmw_guard_condition_t * guard_condition = rmw_guard_condition_allocate();
   if (!guard_condition) {
     RMW_SET_ERROR_MSG("failed to allocate guard condition");
