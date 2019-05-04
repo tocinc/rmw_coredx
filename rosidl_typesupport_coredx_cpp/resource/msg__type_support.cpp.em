@@ -366,7 +366,7 @@ static bool serialize( const void    * untyped_ros_msg,
 		       rmw_serialized_message_t *buf )
 {
   
-  if (untyped_ros_msg == 0) {
+  if ( !untyped_ros_msg ) {
     fprintf(stderr, "serialize: invalid ros message pointer\n");
     return false;
   }
@@ -386,7 +386,9 @@ static bool serialize( const void    * untyped_ros_msg,
   
   // get required size
   size_t buf_len = dds_message.get_marshal_size( 0, 0 );
-  
+  if ( buf_len > 0 )
+    buf_len += 4; /* CDR hdr */
+
   // allocate required buffer
   if ( buf_len > buf->buffer_capacity )
     {
@@ -398,7 +400,19 @@ static bool serialize( const void    * untyped_ros_msg,
     }
 
   // call marshal to serialize data
-  buf->buffer_length = dds_message.marshal_cdr( (unsigned char*)buf->buffer, 0, (unsigned int)buf->buffer_capacity, 0, 0 );
+  unsigned char * cbuf = buf->buffer;
+  buf->buffer_length = dds_message.marshal_cdr( cbuf+4, 0, (unsigned int)(buf->buffer_capacity-4), 0, 0 );
+  buf->buffer_length += 4;
+  if ( buf->buffer_length == buf_len )
+    {
+      /* construct CDR hdr  */
+      unsigned char my_endian;
+      DDS_MARSH_MY_ENDIAN( my_endian );
+      cbuf[ 0 ]  = 0x00;
+      cbuf[ 1 ]  = my_endian;
+      cbuf[ 2 ]  = 0x00;
+      cbuf[ 3 ]  = 0x00;
+    }
 
   return true;
 }
@@ -419,12 +433,29 @@ static bool deserialize( void * untyped_ros_msg,
   @(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type)*       ros_msg =
     (@(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type)*)untyped_ros_msg;
   
-  // call unmarshal
-  dds_message.unmarshal_cdr( (unsigned char*)buf->buffer, 0, (unsigned int)buf->buffer_length, 0, 0 );
+  unsigned char * cbuf    = buf->buffer;
+  uint32_t        buf_len = buf->buffer_length;
+
+  // validate that the data is CDR encoding, and check endian flag
+  unsigned char my_endian;
+  unsigned char data_endian;
+  DDS_MARSH_MY_ENDIAN( my_endian );
+  if ( cbuf[0] == 0x00 )
+    {
+      data_endian = cbuf[1] & 0x01;
+      // skip CDR hdr
+      cbuf    += 4;
+      buf_len -= 4;
   
-  if ( !convert_dds_message_to_ros(&dds_message, ros_msg) ) {
+      // call unmarshal
+      dds_message.unmarshal_cdr( cbuf, 0, buf_len, (data_endian == my_endian)?0:1, 0 ); 
+ 
+      if ( !convert_dds_message_to_ros(&dds_message, ros_msg) ) {
+        return false;
+      }
+    }
+  else
     return false;
-  }
   
   return true;
 }

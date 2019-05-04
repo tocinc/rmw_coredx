@@ -23,6 +23,8 @@
 #include <rmw/error_handling.h>
 #include <rmw/impl/cpp/macros.hpp>
 
+#include <rcutils/logging_macros.h>
+
 #include <dds/dds.hh>
 #include <dds/dds_builtinDataReader.hh>
 
@@ -168,12 +170,19 @@ rmw_service_server_is_available(
     // error string already set
     return ret;
   }
+
 #ifdef DISCOVERY_DEBUG_LOGGING
   printf("Checking for service server:\n");
   printf(" - %s: %zu\n",
     request_topic_name,
     number_of_request_subscribers);
 #endif
+  RCUTILS_LOG_DEBUG_NAMED(
+    "rmw_coredx_cpp",
+    "%s[ num request subscribers: %d ]",
+    __FUNCTION__,
+    number_of_request_subscribers );
+  
   if (number_of_request_subscribers == 0) {
     // not ready
     return RMW_RET_OK;
@@ -191,11 +200,23 @@ rmw_service_server_is_available(
     client_info->response_datareader_->get_topicdescription()->get_name(),
     number_of_response_publishers);
 #endif
+  RCUTILS_LOG_DEBUG_NAMED(
+    "rmw_coredx_cpp",
+    "%s[ num response publishers: %d ]",
+    __FUNCTION__,
+    number_of_response_publishers );
+  
   if (number_of_response_publishers == 0) {
     // not ready
     return RMW_RET_OK;
   }
 
+  CoreDXNodeInfo           * node_info = (CoreDXNodeInfo *) node->data;
+  if ( node_info && node_info->participant )
+    {
+      DDS::Duration_t timeout(1,0);
+      node_info->participant->builtin_wait_for_acknowledgments( timeout );
+    }
   // all conditions met, there is a service server available
   *is_available = true;
   return RMW_RET_OK;

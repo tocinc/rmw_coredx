@@ -90,7 +90,7 @@ add_library(rmw_coredx_cpp SHARED
   src/rmw_destroy_wait_set.cpp
   src/rmw_get_gid_for_publisher.cpp
   src/rmw_get_implementation_identifier.cpp
-#  NOTYET: src/rmw_get_node_info_and_types.cpp
+  src/rmw_get_node_info_and_types.cpp
   src/rmw_get_node_names.cpp
   src/rmw_get_serialization_format.cpp
   src/rmw_get_service_names_and_types.cpp
@@ -104,6 +104,7 @@ add_library(rmw_coredx_cpp SHARED
   src/rmw_send_response.cpp
   src/rmw_serialize.cpp
   src/rmw_service_server_is_available.cpp
+  src/rmw_shutdown.cpp
   src/rmw_subscription_count_matched_publishers.cpp
   src/rmw_take.cpp
   src/rmw_take_request.cpp

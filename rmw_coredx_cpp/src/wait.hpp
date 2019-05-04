@@ -104,6 +104,7 @@ wait(const char * implementation_identifier,
     /* DEBUG -- */
     fprintf(stderr, "wait_set.attach( guard_condition: %p )\n", guard_condition);
 #endif
+
     rmw_ret_t rmw_status = check_attach_condition_error(
       dds_wait_set->attach_condition(*guard_condition));
     if (rmw_status != RMW_RET_OK) {
@@ -130,6 +131,7 @@ wait(const char * implementation_identifier,
       RMW_SET_ERROR_MSG("failed to set enabled statuses");
       return RMW_RET_ERROR;
     }
+
 #if (DO_DEBUG)
     /* DEBUG -- */
     fprintf(stderr, "wait_set.attach( req status_cond: %p )\n", condition);
@@ -164,6 +166,7 @@ wait(const char * implementation_identifier,
     /* DEBUG -- */
     fprintf(stderr, "wait_set.attach( rep status_cond: %p )\n", condition);
 #endif
+
     rmw_ret_t rmw_status = check_attach_condition_error(
       dds_wait_set->attach_condition(condition));
     if (rmw_status != RMW_RET_OK) {
@@ -171,6 +174,9 @@ wait(const char * implementation_identifier,
     }
   }
 
+  //--------------------------------------------------------------------------
+  //--------------------------------------------------------------------------
+  
   // invoke wait until one of the conditions triggers
   DDS::Duration_t timeout;
   if (!wait_timeout) {
@@ -183,15 +189,16 @@ wait(const char * implementation_identifier,
 
   DDS::ReturnCode_t status = dds_wait_set->wait(active_conditions, timeout);
 
-  if (status == DDS::RETCODE_TIMEOUT) {
-    return RMW_RET_TIMEOUT;
-  }
+  //--------------------------------------------------------------------------
+  //--------------------------------------------------------------------------
 
-  if (status != DDS::RETCODE_OK) {
+  if (status == DDS::RETCODE_TIMEOUT) {
+    //return RMW_RET_TIMEOUT; <--- rcl does not like this! so we'll just say OK
+  } else if (status != DDS::RETCODE_OK) {
     RMW_SET_ERROR_MSG("failed to wait on wait set");
     return RMW_RET_ERROR;
   }
-
+	   
   // set subscriber handles to zero for all not triggered conditions
   for (size_t i = 0; i < subscriptions->subscriber_count; ++i) {
     SubscriberInfo * subscriber_info =
@@ -219,9 +226,10 @@ wait(const char * implementation_identifier,
       subscriptions->subscribers[i] = 0;
     }
 #if (DO_DEBUG)
-    /* DEBUG -- */
-    else
+    else {
+      /* DEBUG -- */
       fprintf(stderr, "wait set: active: read_cond: %p\n", read_condition);
+    }
 #endif
     DDS_ReturnCode_t retcode = dds_wait_set->detach_condition(*read_condition);
     if (retcode != DDS_RETCODE_OK) {
@@ -246,7 +254,8 @@ wait(const char * implementation_identifier,
           if (active_conditions[j] == guard_condition) {
 #if (DO_DEBUG)
             /* DEBUG -- */
-            fprintf(stderr, "wait set: active: guard_cond: %p (clearing it)\n", guard_condition);
+            fprintf(stderr, "wait set: active: guard_cond: %p (clearing it)\n",
+		    guard_condition);
 #endif
             guard_condition->set_trigger_value(0);
             break;
@@ -293,9 +302,10 @@ wait(const char * implementation_identifier,
       services->services[i] = 0;
     }
 #if (DO_DEBUG)
-    /* DEBUG -- */
-    else
+    else {
+      /* DEBUG -- */
       fprintf(stderr, "wait set: active: req status_cond: %p\n", condition);
+    }
 #endif
     DDS_ReturnCode_t retcode = dds_wait_set->detach_condition(*condition);
     if (retcode != DDS_RETCODE_OK) {
@@ -331,15 +341,15 @@ wait(const char * implementation_identifier,
       clients->clients[i] = 0;
     }
 #if (DO_DEBUG)
-    /* DEBUG -- */
-    else
-      {
-        fprintf(stderr, "wait set: active: rep status_cond: %p (flag: %s) (enabled: 0x%0x) (status: 0x%0x)\n",
-                condition,
-                condition->get_trigger_value()?"set":"clear",
-                condition->get_enabled_statuses(),
-                response_datareader->get_status_changes());
-      }
+    else {
+      /* DEBUG -- */
+      fprintf(stderr, "wait set: active: rep status_cond: %p (flag: %s)"
+	      " (enabled: 0x%0x) (status: 0x%0x)\n",
+	      condition,
+	      condition->get_trigger_value()?"set":"clear",
+	      condition->get_enabled_statuses(),
+	      response_datareader->get_status_changes());
+    }
 #endif
     DDS_ReturnCode_t retcode = dds_wait_set->detach_condition(*condition);
     if (retcode != DDS_RETCODE_OK) {

@@ -179,12 +179,19 @@ rmw_create_publisher( const rmw_node_t        * node,
     goto fail;
   }
 
+  // let discovery complete
+  {
+    DDS::Duration_t timeout(1,0);
+    status = participant->builtin_wait_for_acknowledgments( timeout );
+  }
+  
   // Allocate memory for the CoreDXStaticPublisherInfo object.
   buf = rmw_allocate(sizeof(CoreDXStaticPublisherInfo));
   if (!buf) {
     RMW_SET_ERROR_MSG("failed to allocate memory");
     goto fail;
   }
+
   // Use a placement new to construct the CoreDXStaticPublisherInfo in the preallocated buffer.
   RMW_TRY_PLACEMENT_NEW(publisher_info, buf, goto fail, CoreDXStaticPublisherInfo)
   buf = nullptr;  // Only free the publisher_info pointer; don't need the buf pointer anymore.
@@ -213,8 +220,6 @@ rmw_create_publisher( const rmw_node_t        * node,
     goto fail;
   }
 
-  node_info->publisher_listener->trigger_graph_guard_condition();
-  
   RCUTILS_LOG_DEBUG_NAMED(
     "rmw_coredx_cpp",
     "%s[ node: %p ret: %p ]",

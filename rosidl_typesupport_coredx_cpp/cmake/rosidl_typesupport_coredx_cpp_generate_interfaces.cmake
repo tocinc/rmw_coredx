@@ -197,6 +197,9 @@ if(rosidl_generate_interfaces_LIBRARY_NAME)
     PROPERTIES OUTPUT_NAME "${rosidl_generate_interfaces_LIBRARY_NAME}${_target_suffix}")
 endif()
 
+target_compile_definitions(${rosidl_generate_interfaces_TARGET}${_target_suffix}
+  PRIVATE "DDS_SAFE_UNMARSH" )
+
 if(CoreDX_GLIBCXX_USE_CXX11_ABI_ZERO)
   target_compile_definitions(${rosidl_generate_interfaces_TARGET}${_target_suffix}
     PRIVATE CoreDX_GLIBCXX_USE_CXX11_ABI_ZERO)

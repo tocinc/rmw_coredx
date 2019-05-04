@@ -36,6 +36,10 @@ template<typename EntityQos>
 bool set_entity_qos_from_profile(const rmw_qos_profile_t * qos_profile,
                                  EntityQos               & entity_qos)
 {
+  // and, let's just dial down latency.
+  entity_qos.latency_budget.duration.sec     = 0;
+  entity_qos.latency_budget.duration.nanosec = 0;
+  
   // Read properties from the rmw profile
   switch (qos_profile->history) {
     case RMW_QOS_POLICY_HISTORY_KEEP_LAST:
@@ -97,6 +101,7 @@ bool set_entity_qos_from_profile(const rmw_qos_profile_t * qos_profile,
     }
     entity_qos.history.depth = static_cast<int32_t>(qos_profile->depth);
   }
+
   return true;
 }
 
@@ -144,6 +149,7 @@ get_datareader_qos(DDS::DomainParticipant  * participant,
   if (!set_entity_qos_from_profile(qos_profile, datareader_qos)) {
     return false;
   }
+
   return true;
 }
 
@@ -171,6 +177,7 @@ get_datawriter_qos(DDS::DomainParticipant  * participant,
   if (!set_entity_qos_from_profile(qos_profile, datawriter_qos)) {
     return false;
   }
+
   return true;
 }
 

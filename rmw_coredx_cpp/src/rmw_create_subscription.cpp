@@ -174,7 +174,13 @@ rmw_create_subscription( const rmw_node_t        * node,
     RMW_SET_ERROR_MSG("failed to create datareader");
     goto fail;
   }
-
+  
+  // let discovery complete
+  {
+    DDS::Duration_t timeout(1,0);
+    status = participant->builtin_wait_for_acknowledgments( timeout );
+  }
+  
   read_condition = topic_reader->create_readcondition(
     DDS::ANY_SAMPLE_STATE, DDS::ANY_VIEW_STATE, DDS::ANY_INSTANCE_STATE);
   if (!read_condition) {

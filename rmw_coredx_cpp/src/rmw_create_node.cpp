@@ -91,7 +91,11 @@ rmw_create_node (
     RMW_SET_ERROR_MSG("failed to get participant factory");
     return NULL;
   }
-
+  DDS::DomainParticipantFactoryQos dpf_qos;
+  dpf_->get_qos( dpf_qos );
+  dpf_qos.entity_factory.autoenable_created_entities = false;
+  dpf_->set_qos( dpf_qos );
+  
   set_log_level();
 
   RCUTILS_LOG_DEBUG_NAMED(
@@ -223,6 +227,13 @@ rmw_create_node (
   node_handle->implementation_identifier = toc_coredx_identifier;
   node_handle->data = node_info;
 
+  {
+    DDS::ReturnCode_t retval = participant->enable();
+    if ( retval != DDS::RETCODE_OK )
+      RMW_SET_ERROR_MSG("failed to enable participant");
+    toc_sleep( USEC_PER_SEC/5 );
+  }
+  
   RCUTILS_LOG_DEBUG_NAMED(
     "rmw_coredx_cpp",
     "%s[ ret: %p ]",

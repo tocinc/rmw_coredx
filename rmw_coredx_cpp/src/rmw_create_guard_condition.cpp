@@ -75,7 +75,7 @@ rmw_create_guard_condition(rmw_context_t * context)
   RCUTILS_LOG_DEBUG_NAMED(
     "rmw_coredx_cpp",
     "%s[ ret: %p ]",
-    __FUNCTION__, guard_condition );
+    __FUNCTION__, guard_condition->data );
   
   return guard_condition;
   

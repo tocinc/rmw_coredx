@@ -20,6 +20,8 @@
 #include <rmw/rmw.h>
 #include <rmw/error_handling.h>
 
+#include <rcutils/logging_macros.h>
+
 #include <dds/dds.hh>
 
 #include "rmw_coredx_types.hpp"
@@ -71,6 +73,13 @@ rmw_publisher_count_matched_subscriptions( const rmw_publisher_t * publisher,
     return RMW_RET_ERROR;
   }
   *subscription_count = s.current_count;
+
+  RCUTILS_LOG_DEBUG_NAMED(
+    "rmw_coredx_cpp",
+    "%s[ ret: %d ]",
+    __FUNCTION__,
+    s.current_count );
+  
   return RMW_RET_OK;
 }
 
