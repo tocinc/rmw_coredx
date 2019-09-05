@@ -125,6 +125,7 @@ rmw_create_node (
     RMW_SET_ERROR_MSG("failed to populate user_data buffer");
     return NULL;
   }
+  dp_qos.logging.flags = 0; // 0x2a;
   
   DDS::DomainId_t           domain = static_cast<DDS::DomainId_t>(domain_id);
   DDS::DomainParticipant  * participant =

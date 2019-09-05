@@ -39,7 +39,8 @@ extern "C" {
  */
 rmw_ret_t
 rmw_publish_serialized_message( const rmw_publisher_t * publisher,
-				const rmw_serialized_message_t * serialized_message )
+				const rmw_serialized_message_t * serialized_message,
+				rmw_publisher_allocation_t * allocation )
 {
   if ( !serialized_message ) {
     RMW_SET_ERROR_MSG("serialized message handle is null");
@@ -64,7 +65,7 @@ rmw_publish_serialized_message( const rmw_publisher_t * publisher,
   //   :: deserialize into 'ros' message
   callbacks->deserialize( ros_msg, serialized_message );
   //   :: publish ros message
-  rmw_ret_t retval =  rmw_publish( publisher, ros_msg );
+  rmw_ret_t retval =  rmw_publish( publisher, ros_msg, allocation );
   //   :: clean up
   callbacks->free_ros_msg( ros_msg, (rcutils_allocator_t*)&serialized_message->allocator );
   // --------------------------------------------------------

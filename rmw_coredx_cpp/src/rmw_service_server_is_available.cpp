@@ -181,7 +181,7 @@ rmw_service_server_is_available(
     "rmw_coredx_cpp",
     "%s[ num request subscribers: %d ]",
     __FUNCTION__,
-    number_of_request_subscribers );
+    static_cast<int>(number_of_request_subscribers) );
   
   if (number_of_request_subscribers == 0) {
     // not ready
@@ -204,7 +204,7 @@ rmw_service_server_is_available(
     "rmw_coredx_cpp",
     "%s[ num response publishers: %d ]",
     __FUNCTION__,
-    number_of_response_publishers );
+    static_cast<int>(number_of_response_publishers) );
   
   if (number_of_response_publishers == 0) {
     // not ready

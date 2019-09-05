@@ -18,6 +18,7 @@
 #endif
 
 #include <rmw/rmw.h>
+#include <rmw/event.h>
 #include <rmw/types.h>
 #include <rmw/allocators.h>
 #include <rmw/error_handling.h>
@@ -30,8 +31,6 @@
 #include "rmw_coredx_types.hpp"
 #include "util.hpp"
 
-#include "take.h"
-
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -40,13 +39,16 @@ extern "C" {
 /* ************************************************
  */
 rmw_ret_t
-rmw_take( const rmw_subscription_t * subscription,
-          void                     * ros_message,
-          bool                     * taken,
-	  rmw_subscription_allocation_t * allocation )
+rmw_take_event( const rmw_event_t        * event_handle,
+		void                     * event_info,
+		bool                     * taken )
 {
-  (void)allocation;
-  return _take(subscription, ros_message, taken, nullptr);
+  (void)event_handle;
+  (void)event_info;
+  (void)taken;
+  // todo ...
+  throw std::runtime_error("take_event()...");
+  return RMW_RET_UNSUPPORTED;
 }
 
 #if defined(__cplusplus)

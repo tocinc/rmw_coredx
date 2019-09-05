@@ -1,47 +1,51 @@
-// generated from
-// rosidl_typesupport_coredx_cpp/resource/srv__rosidl_typesupport_coredx_cpp.hpp.em
-// generated code does not contain a copyright notice
-
-@#######################################################################
-@# EmPy template for generating
-@# <srv>__rosidl_typesupport_coredx_cpp.hpp files
-@#
-@# Context:
-@#  - spec (rosidl_parser.MessageSpecification)
-@#    Parsed specification of the .srv file
-@#  - subfolder (string)
-@#    The subfolder / subnamespace of the message
-@#    Either 'srv' or 'action'
-@#  - get_header_filename_from_srv_name (function)
-@#######################################################################
-@
+@# Included from rosidl_typesupport_coredx_cpp/resource/srv__rosidl_typesupport_coredx_cpp.hpp.em
 @{
-header_guard_parts = [
-    spec.pkg_name, subfolder,
-    get_header_filename_from_msg_name(spec.srv_name) + '__rosidl_typesupport_coredx_cpp_hpp']
-header_guard_variable = '__'.join([x.upper() for x in header_guard_parts]) + '_'
+TEMPLATE(
+    'msg__rosidl_typesupport_coredx_cpp.hpp.em',
+    package_name=package_name, interface_path=interface_path,
+    message=service.request_message,
+    include_directives=include_directives
+)
 }@
-#ifndef @(header_guard_variable)
-#define @(header_guard_variable)
 
-#include <rmw/types.h>
+@{
+TEMPLATE(
+    'msg__rosidl_typesupport_coredx_cpp.hpp.em',
+    package_name=package_name, interface_path=interface_path,
+    message=service.response_message,
+    include_directives=include_directives
+)
+}@
 
-#include "rosidl_typesupport_cpp/service_type_support.hpp"
-#include "rosidl_typesupport_interface/macros.h"
+@{
+header_files = [
+    'rmw/types.h',
+    'rosidl_typesupport_cpp/service_type_support.hpp',
+    'rosidl_typesupport_interface/macros.h',
+    package_name + '/msg/rosidl_typesupport_coredx_cpp__visibility_control.h'
+]
+}@
+@[for header_file in header_files]@
+@[    if header_file in include_directives]@
+// already included above
+// @
+@[    else]@
+@{include_directives.add(header_file)}@
+@[    end if]@
+#include "@(header_file)"
+@[end for]@
 
-#include "@(spec.pkg_name)/msg/rosidl_typesupport_coredx_cpp__visibility_control.h"
+@# -------------------------------------------------------------------
 
-namespace @(spec.pkg_name)
+@[for ns in service.namespaced_type.namespaces]@
+namespace @(ns)
 {
-
-namespace @(subfolder)
-{
-
+@[end for]@
 namespace typesupport_coredx_cpp
 {
-ROSIDL_TYPESUPPORT_COREDX_CPP_PUBLIC_@(spec.pkg_name)
+ROSIDL_TYPESUPPORT_COREDX_CPP_PUBLIC_@(package_name)
 void *
-create_requester__@(spec.srv_name)(
+create_requester__@(service.namespaced_type.name)(
   void * untyped_participant,
   const char * service_name,
   const char * req_topic_name,
@@ -52,21 +56,21 @@ create_requester__@(spec.srv_name)(
   void ** untyped_writer,
   void * (*allocator)(size_t));
 
-ROSIDL_TYPESUPPORT_COREDX_CPP_PUBLIC_@(spec.pkg_name)
+ROSIDL_TYPESUPPORT_COREDX_CPP_PUBLIC_@(package_name)
 const char *
-destroy_requester__@(spec.srv_name)(
+destroy_requester__@(service.namespaced_type.name)(
   void * untyped_requester,
   void (* deallocator)(void *));
 
-ROSIDL_TYPESUPPORT_COREDX_CPP_PUBLIC_@(spec.pkg_name)
+ROSIDL_TYPESUPPORT_COREDX_CPP_PUBLIC_@(package_name)
 int64_t
-send_request__@(spec.srv_name)(
+send_request__@(service.namespaced_type.name)(
   void * untyped_requester,
   const void * untyped_ros_request);
 
-ROSIDL_TYPESUPPORT_COREDX_CPP_PUBLIC_@(spec.pkg_name)
+ROSIDL_TYPESUPPORT_COREDX_CPP_PUBLIC_@(package_name)
 void *
-create_replier__@(spec.srv_name)(
+create_replier__@(service.namespaced_type.name)(
   void * untyped_participant,
   const char * service_name,
   const char * req_topic_name,
@@ -77,66 +81,66 @@ create_replier__@(spec.srv_name)(
   void ** untyped_writer,
   void * (*allocator)(size_t));
 
-ROSIDL_TYPESUPPORT_COREDX_CPP_PUBLIC_@(spec.pkg_name)
+ROSIDL_TYPESUPPORT_COREDX_CPP_PUBLIC_@(package_name)
 const char *
-destroy_replier__@(spec.srv_name)(
+destroy_replier__@(service.namespaced_type.name)(
   void * untyped_replier,
   void (* deallocator)(void *));
 
-ROSIDL_TYPESUPPORT_COREDX_CPP_PUBLIC_@(spec.pkg_name)
+ROSIDL_TYPESUPPORT_COREDX_CPP_PUBLIC_@(package_name)
 bool
-take_request__@(spec.srv_name)(
+take_request__@(service.namespaced_type.name)(
   void * untyped_replier,
   rmw_request_id_t * request_header,
   void * untyped_ros_request);
 
-ROSIDL_TYPESUPPORT_COREDX_CPP_PUBLIC_@(spec.pkg_name)
+ROSIDL_TYPESUPPORT_COREDX_CPP_PUBLIC_@(package_name)
 bool
-take_response__@(spec.srv_name)(
+take_response__@(service.namespaced_type.name)(
   void * untyped_requester,
   rmw_request_id_t * request_header,
   void * untyped_ros_response);
 
-ROSIDL_TYPESUPPORT_COREDX_CPP_PUBLIC_@(spec.pkg_name)
+ROSIDL_TYPESUPPORT_COREDX_CPP_PUBLIC_@(package_name)
 bool
-send_response__@(spec.srv_name)(
+send_response__@(service.namespaced_type.name)(
   void * untyped_replier,
   const rmw_request_id_t * request_header,
   const void * untyped_ros_response);
 
-ROSIDL_TYPESUPPORT_COREDX_CPP_PUBLIC_@(spec.pkg_name)
+ROSIDL_TYPESUPPORT_COREDX_CPP_PUBLIC_@(package_name)
 void *
-get_request_datawriter__@(spec.srv_name)(void * untyped_requester);
+get_request_datawriter__@(service.namespaced_type.name)(void * untyped_requester);
 
-ROSIDL_TYPESUPPORT_COREDX_CPP_PUBLIC_@(spec.pkg_name)
+ROSIDL_TYPESUPPORT_COREDX_CPP_PUBLIC_@(package_name)
 void *
-get_reply_datareader__@(spec.srv_name)(void * untyped_requester);
+get_reply_datareader__@(service.namespaced_type.name)(void * untyped_requester);
 
-ROSIDL_TYPESUPPORT_COREDX_CPP_PUBLIC_@(spec.pkg_name)
+ROSIDL_TYPESUPPORT_COREDX_CPP_PUBLIC_@(package_name)
 void *
-get_request_datareader__@(spec.srv_name)(void * untyped_replier);
+get_request_datareader__@(service.namespaced_type.name)(void * untyped_replier);
 
-ROSIDL_TYPESUPPORT_COREDX_CPP_PUBLIC_@(spec.pkg_name)
+ROSIDL_TYPESUPPORT_COREDX_CPP_PUBLIC_@(package_name)
 void *
-get_reply_datawriter__@(spec.srv_name)(void * untyped_replier);
+get_reply_datawriter__@(service.namespaced_type.name)(void * untyped_replier);
 
 }  // namespace typesupport_coredx_cpp
-
-}  // namespace @(subfolder)
-
-}  // namespace @(spec.pkg_name)
+@[for ns in reversed(service.namespaced_type.namespaces)]@
+}  // namespace @(ns)
+@[end for]@
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-ROSIDL_TYPESUPPORT_COREDX_CPP_PUBLIC_@(spec.pkg_name)
+ROSIDL_TYPESUPPORT_COREDX_CPP_PUBLIC_@(package_name)
 const rosidl_service_type_support_t *
-  ROSIDL_TYPESUPPORT_INTERFACE__SERVICE_SYMBOL_NAME(rosidl_typesupport_coredx_cpp, @(spec.pkg_name), @(subfolder), @(spec.srv_name))();
+  ROSIDL_TYPESUPPORT_INTERFACE__SERVICE_SYMBOL_NAME(
+    rosidl_typesupport_coredx_cpp,
+    @(', '.join([package_name] + list(interface_path.parents[0].parts))),
+    @(service.namespaced_type.name))();
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif  // @(header_guard_variable)

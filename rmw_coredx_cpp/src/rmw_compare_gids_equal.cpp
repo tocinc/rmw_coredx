@@ -73,7 +73,7 @@ rmw_compare_gids_equal( const rmw_gid_t * gid1,
     RMW_SET_ERROR_MSG("gid2 is invalid");
     return RMW_RET_ERROR;
   }
-  *result =  &detail1->publication_handle == &detail2->publication_handle;
+  *result =  (detail1->publication_handle == detail2->publication_handle);
   return RMW_RET_OK;
 }
 

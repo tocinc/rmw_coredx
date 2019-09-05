@@ -28,6 +28,7 @@ endif()
 
 find_package(ament_cmake_python REQUIRED)
 
+ament_export_dependencies(rcutils)
 ament_export_dependencies(rmw)
 ament_export_dependencies(rosidl_cmake)
 ament_export_dependencies(rosidl_generator_c)
@@ -39,7 +40,9 @@ ament_export_include_directories(include)
 
 ament_python_install_package(${PROJECT_NAME})
 
-add_library(${PROJECT_NAME} SHARED src/identifier.cpp)
+add_library(${PROJECT_NAME} SHARED
+  src/identifier.cpp
+  src/wstring_conversion.cpp )
 if(WIN32)
   target_compile_definitions(${PROJECT_NAME}
     PRIVATE "ROSIDL_TYPESUPPORT_COREDX_CPP_BUILDING_DLL")
@@ -48,6 +51,9 @@ target_include_directories(${PROJECT_NAME}
   PUBLIC
   include
 )
+ament_target_dependencies(
+  ${PROJECT_NAME}
+  "CoreDX")
 ament_export_libraries(${PROJECT_NAME})
 
 ament_index_register_resource("rosidl_typesupport_cpp")

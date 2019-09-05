@@ -1,45 +1,87 @@
-// generated from rosidl_typesupport_coredx_cpp/resource/srv__type_support.cpp.em
-// generated code does not contain a copyright notice
+@# Included from rosidl_typesupport_coredx_cpp/resource/idl__dds_coredx__type_support.cpp.em
+@{
+from rosidl_cmake import convert_camel_case_to_lower_case_underscore
+include_parts = [package_name] + list(interface_path.parents[0].parts)
+include_base = '/'.join(include_parts)
+cpp_include_prefix = interface_path.stem
 
-@#######################################################################
-@# EmPy template for generating <srv>__type_support.cpp files
-@#
-@# Context:
-@#  - spec (rosidl_parser.ServiceSpecification)
-@#    Parsed specification of the .srv file
-@#  - get_header_filename_from_msg_name (function)
-@#######################################################################
-@
+c_include_prefix = convert_camel_case_to_lower_case_underscore(cpp_include_prefix)
+
+header_files = [
+    include_base + '/' + c_include_prefix + '__rosidl_typesupport_coredx_cpp.hpp',
+    'rmw/error_handling.h',
+    'rosidl_typesupport_coredx_cpp/identifier.hpp',
+    'rosidl_typesupport_coredx_cpp/service_type_support.h',
+    'rosidl_typesupport_coredx_cpp/service_type_support_decl.hpp',
+    include_base + '/' + c_include_prefix + '__struct.hpp',
+#    include_base + '/dds_coredx/' + cpp_include_prefix + '_TypeSupport.hh',
+    include_base + '/' + c_include_prefix + '__rosidl_typesupport_coredx_cpp.hpp',
+]
+
+dds_specific_header_files = [
+    'dds/dds.hh',
+    'dds/request_reply.hh'
+]
+}@
+
 #ifdef CoreDX_GLIBCXX_USE_CXX11_ABI_ZERO
 #define _GLIBCXX_USE_CXX11_ABI 0
 #endif
 
-#include "@(spec.pkg_name)/@(subfolder)/@(get_header_filename_from_msg_name(spec.srv_name))__rosidl_typesupport_coredx_cpp.hpp"
+@[for header_file in dds_specific_header_files]@
+@[    if header_file in include_directives]@
+// already included above
+// @
+@[    else]@
+@{include_directives.add(header_file)}@
+@[    end if]@
+#include <@(header_file)>
+@[end for]@
 
-#include <dds/dds.hh>
-#include <dds/request_reply.hh>
+@[for header_file in header_files]@
+@[    if header_file in include_directives]@
+// already included above
+// @
+@[    else]@
+@{include_directives.add(header_file)}@
+@[    end if]@
+#include "@(header_file)"
+@[end for]@
 
-#include "rmw/error_handling.h"
-#include "rosidl_typesupport_coredx_cpp/identifier.hpp"
-#include "rosidl_typesupport_coredx_cpp/service_type_support.h"
-#include "rosidl_typesupport_coredx_cpp/service_type_support_decl.hpp"
+@{
+TEMPLATE(
+    'msg__type_support.cpp.em',
+    package_name=package_name, interface_path=interface_path,
+    message=service.request_message,
+    include_directives=include_directives
+)
+}@
 
-#include "@(spec.pkg_name)/@(subfolder)/@(get_header_filename_from_msg_name(spec.srv_name))__struct.hpp"
-#include "@(spec.pkg_name)/@(subfolder)/dds_coredx/@(spec.srv_name)_Request_TypeSupport.hh"
-#include "@(spec.pkg_name)/@(subfolder)/@(get_header_filename_from_msg_name(spec.srv_name + '_Request'))__rosidl_typesupport_coredx_cpp.hpp"
-#include "@(spec.pkg_name)/@(subfolder)/dds_coredx/@(spec.srv_name)_Response_TypeSupport.hh"
-#include "@(spec.pkg_name)/@(subfolder)/@(get_header_filename_from_msg_name(spec.srv_name + '_Response'))__rosidl_typesupport_coredx_cpp.hpp"
+@{
+TEMPLATE(
+    'msg__type_support.cpp.em',
+    package_name=package_name, interface_path=interface_path,
+    message=service.response_message,
+    include_directives=include_directives
+)
+}@
 
-namespace @(spec.pkg_name)
+@[for ns in service.namespaced_type.namespaces]@
+namespace @(ns)
 {
-
-namespace @(subfolder)
-{
-
+@[end for]@
 namespace typesupport_coredx_cpp
 {
+@{
+__ros_srv_pkg_prefix = '::'.join(service.namespaced_type.namespaces)
+__ros_srv_type = __ros_srv_pkg_prefix + '::' + service.namespaced_type.name
+__ros_request_msg_type = __ros_srv_pkg_prefix + '::' + service.request_message.structure.namespaced_type.name
+__ros_response_msg_type = __ros_srv_pkg_prefix + '::' + service.response_message.structure.namespaced_type.name
+__dds_request_msg_type = __ros_srv_pkg_prefix + '::dds_::' + service.request_message.structure.namespaced_type.name + '_'
+__dds_response_msg_type = __ros_srv_pkg_prefix + '::dds_::' + service.response_message.structure.namespaced_type.name + '_'
+}@
 
-void * create_requester__@(spec.srv_name)(
+void * create_requester__@(service.namespaced_type.name)(
   void * untyped_participant,
   const char * service_name,
   const char * req_topic_name,
@@ -51,8 +93,8 @@ void * create_requester__@(spec.srv_name)(
   void * (*allocator)(size_t))
 {
   using RequesterType = DDS::rpc::Requester<
-      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Request_,
-      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Response_>;
+    @(__dds_request_msg_type),
+    @(__dds_response_msg_type)>;
   if (!untyped_participant || !service_name || !req_topic_name || !rep_topic_name || !untyped_reader) {
     return NULL;
   }
@@ -83,13 +125,13 @@ void * create_requester__@(spec.srv_name)(
   return requester;
 }
 
-const char * destroy_requester__@(spec.srv_name)(
+const char * destroy_requester__@(service.namespaced_type.name)(
   void * untyped_requester,
   void (*deallocator)(void *))
 {
   using RequesterType = DDS::rpc::Requester<
-      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Request_,
-      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Response_>;
+    @(__dds_request_msg_type),
+    @(__dds_response_msg_type)>;
   auto requester = static_cast<RequesterType *>(untyped_requester);
 
   requester->~RequesterType();
@@ -98,30 +140,7 @@ const char * destroy_requester__@(spec.srv_name)(
   return nullptr;
 }
 
-int64_t send_request__@(spec.srv_name)(
-  void * untyped_requester,
-  const void * untyped_ros_request)
-{
-  using ROSRequestType = @(spec.pkg_name)::@(subfolder)::@(spec.srv_name)_Request;
-  using RequesterType = DDS::rpc::Requester<
-      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Request_,
-      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Response_>;
-  DDS::WriteSample<
-    @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Request_> request;
-  const ROSRequestType * ros_request = 
-    static_cast<const ROSRequestType *>(untyped_ros_request);
-  @(spec.pkg_name)::@(subfolder)::typesupport_coredx_cpp::convert_ros_message_to_dds(
-    ros_request, &request.data());
-
-  RequesterType * requester = static_cast<RequesterType *>(untyped_requester);
-
-  requester->send_request(request);
-  const DDS::SampleIdentity_t & req_id = request.data().header.requestId;
-  int64_t sequence_number = (((int64_t)req_id.seqnum.high) << 32) | req_id.seqnum.low;
-  return sequence_number;
-}
-
-void * create_replier__@(spec.srv_name)(
+void * create_replier__@(service.namespaced_type.name)(
   void * untyped_participant,
   const char * service_name,
   const char * req_topic_name,
@@ -133,8 +152,8 @@ void * create_replier__@(spec.srv_name)(
   void * (*allocator)(size_t))
 {
   using ReplierType = DDS::rpc::Replier<
-      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Request_,
-      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Response_>;
+    @(__dds_request_msg_type),
+    @(__dds_response_msg_type)>;
   if (!untyped_participant || !service_name || !req_topic_name || !rep_topic_name || !untyped_reader) {
     return NULL;
   }
@@ -165,13 +184,13 @@ void * create_replier__@(spec.srv_name)(
   return replier;
 }
 
-const char * destroy_replier__@(spec.srv_name)(
+const char * destroy_replier__@(service.namespaced_type.name)(
   void * untyped_replier,
   void (*deallocator)(void *))
 {
   using ReplierType = DDS::rpc::Replier<
-      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Request_,
-      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Response_>;
+    @(__dds_request_msg_type),
+    @(__dds_response_msg_type)>;
   auto replier = static_cast<ReplierType *>(untyped_replier);
 
   replier->~ReplierType();
@@ -180,15 +199,36 @@ const char * destroy_replier__@(spec.srv_name)(
   return nullptr;
 }
 
-bool take_request__@(spec.srv_name)(
+int64_t send_request__@(service.namespaced_type.name)(
+  void * untyped_requester,
+  const void * untyped_ros_request)
+{
+  using ROSRequestType = @(__ros_request_msg_type);
+  using RequesterType = DDS::rpc::Requester<
+    @(__dds_request_msg_type),
+    @(__dds_response_msg_type)>;
+  DDS::WriteSample<@(__dds_request_msg_type)> request;
+  const ROSRequestType * ros_request = 
+    static_cast<const ROSRequestType *>(untyped_ros_request);
+  @(__ros_srv_pkg_prefix)::typesupport_coredx_cpp::convert_ros_message_to_dds(*ros_request, request.data());
+
+  RequesterType * requester = static_cast<RequesterType *>(untyped_requester);
+
+  requester->send_request(request);
+  const DDS::SampleIdentity_t & req_id = request.data().header.requestId;
+  int64_t sequence_number = (((int64_t)req_id.seqnum.high) << 32) | req_id.seqnum.low;
+  return sequence_number;
+}
+
+bool take_request__@(service.namespaced_type.name)(
   void * untyped_replier,
   rmw_request_id_t * request_header,
   void * untyped_ros_request)
 {
   using ReplierType = DDS::rpc::Replier<
-      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Request_,
-      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Response_>;
-  using ROSRequestType = @(spec.pkg_name)::@(subfolder)::@(spec.srv_name)_Request;
+    @(__dds_request_msg_type),
+    @(__dds_response_msg_type)>;
+  using ROSRequestType = @(__ros_request_msg_type);
   if (!untyped_replier || !request_header || !untyped_ros_request) {
     return false;
   }
@@ -197,7 +237,7 @@ bool take_request__@(spec.srv_name)(
 
   ROSRequestType * ros_request = static_cast<ROSRequestType *>(untyped_ros_request);
 
-  DDS::Sample<@(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Request_> request;
+  DDS::Sample<@(__dds_request_msg_type)> request;
   bool taken = replier->take_request(request);
   if (!taken) {
     return false;
@@ -207,8 +247,9 @@ bool take_request__@(spec.srv_name)(
   }
 
   bool converted =
-    @(spec.pkg_name)::@(subfolder)::typesupport_coredx_cpp::convert_dds_message_to_ros(&request.data(), ros_request);
+    @(__ros_srv_pkg_prefix)::typesupport_coredx_cpp::convert_dds_message_to_ros(request.data(), *ros_request);
   if (!converted) {
+    throw std::runtime_error("failed to convert request to ros");
     return false;
   }
 
@@ -219,13 +260,50 @@ bool take_request__@(spec.srv_name)(
   return true;
 }
 
-bool take_response__@(spec.srv_name)(
+bool send_response__@(service.namespaced_type.name)(
+  void * untyped_replier,
+  const rmw_request_id_t * request_header,
+  const void * untyped_ros_response)
+{
+  using ROSResponseType = const @(__ros_response_msg_type);
+  using ReplierType = DDS::rpc::Replier<
+    @(__dds_request_msg_type),
+    @(__dds_response_msg_type)>;
+  if (!untyped_replier || !request_header || !untyped_ros_response) {
+    return false;
+  }
+
+  DDS::WriteSample<@(__dds_response_msg_type)> response;
+  ROSResponseType * ros_response = reinterpret_cast<ROSResponseType *>(untyped_ros_response);
+  bool converted =
+    @(__ros_srv_pkg_prefix)::typesupport_coredx_cpp::convert_ros_message_to_dds(*ros_response, response.data());
+  if (!converted) {
+    return false;
+  }
+
+  DDS::SampleIdentity_t request_identity;
+
+  size_t SAMPLE_IDENTITY_SIZE = 16;
+  memcpy(request_identity.guid.value, &request_header->writer_guid[0], SAMPLE_IDENTITY_SIZE);
+
+  request_identity.seqnum.high = (int32_t)((request_header->sequence_number & 0xFFFFFFFF00000000) >> 32);
+  request_identity.seqnum.low = (uint32_t)(request_header->sequence_number & 0xFFFFFFFF);
+  
+  ReplierType * replier = static_cast<ReplierType *>(untyped_replier);
+
+  replier->send_reply(response, request_identity);
+  return true;
+}
+
+bool take_response__@(service.namespaced_type.name)(
   void * untyped_requester,
   rmw_request_id_t * request_header,
   void * untyped_ros_response)
 {
-  using RequesterType = DDS::rpc::Requester<@(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Request_, @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Response_>;
-  using ROSResponseType = @(spec.pkg_name)::@(subfolder)::@(spec.srv_name)_Response;
+  using RequesterType = DDS::rpc::Requester<
+    @(__dds_request_msg_type),
+    @(__dds_response_msg_type)>;
+  using ROSResponseType = @(__ros_response_msg_type);
   if (!untyped_requester || !request_header || !untyped_ros_response) {
     return false;
   }
@@ -234,7 +312,7 @@ bool take_response__@(spec.srv_name)(
 
   ROSResponseType * ros_response = static_cast<ROSResponseType *>(untyped_ros_response);
 
-  DDS::Sample<@(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Response_> response;
+  DDS::Sample<@(__dds_response_msg_type)> response;
   bool received = requester->take_reply(response);
   if (!received) {
     return false;
@@ -249,133 +327,102 @@ bool take_response__@(spec.srv_name)(
   request_header->sequence_number = sequence_number;
 
   bool converted =
-    @(spec.pkg_name)::@(subfolder)::typesupport_coredx_cpp::convert_dds_message_to_ros(&response.data(), ros_response);
+    @(__ros_srv_pkg_prefix)::typesupport_coredx_cpp::convert_dds_message_to_ros(response.data(), *ros_response);
+  if ( !converted )
+    throw std::runtime_error("failed to convert response to ros");
+  
   return converted;
 }
 
-bool send_response__@(spec.srv_name)(
-  void * untyped_replier,
-  const rmw_request_id_t * request_header,
-  const void * untyped_ros_response)
-{
-  using ROSResponseType = const @(spec.pkg_name)::@(subfolder)::@(spec.srv_name)_Response;
-  using ReplierType = DDS::rpc::Replier<@(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Request_, @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Response_>;
-  if (!untyped_replier || !request_header || !untyped_ros_response) {
-    return false;
-  }
-
-  DDS::WriteSample<@(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Response_> response;
-  ROSResponseType * ros_response = reinterpret_cast<ROSResponseType *>(untyped_ros_response);
-  bool converted =
-    @(spec.pkg_name)::@(subfolder)::typesupport_coredx_cpp::convert_ros_message_to_dds(ros_response, &response.data());
-  if (!converted) {
-    return false;
-  }
-
-  DDS::SampleIdentity_t request_identity;
-
-  size_t SAMPLE_IDENTITY_SIZE = 16;
-  memcpy(request_identity.guid.value, &request_header->writer_guid[0], SAMPLE_IDENTITY_SIZE);
-
-  request_identity.seqnum.high = (int32_t)((request_header->sequence_number & 0xFFFFFFFF00000000) >> 32);
-  request_identity.seqnum.low = (uint32_t)(request_header->sequence_number & 0xFFFFFFFF);
-
-  ReplierType * replier = static_cast<ReplierType *>(untyped_replier);
-
-  replier->send_reply(response, request_identity);
-  return true;
-}
-
 // Function to get the type erased dds request datawriter for the requester
-void * get_request_datawriter__@(spec.srv_name)(void * untyped_requester)
+void * get_request_datawriter__@(service.namespaced_type.name)(void * untyped_requester)
 {
   if (!untyped_requester) {
     return NULL;
   }
   using RequesterType = DDS::rpc::Requester<
-      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Request_,
-      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Response_>;
+    @(__dds_request_msg_type),
+    @(__dds_response_msg_type)>;
   RequesterType * requester = reinterpret_cast<RequesterType *>(untyped_requester);
   return requester->get_request_datawriter();
 }
 
 // Function to get the type erased dds reply datawriter for the requester
-void * get_reply_datareader__@(spec.srv_name)(void * untyped_requester)
+void * get_reply_datareader__@(service.namespaced_type.name)(void * untyped_requester)
 {
   if (!untyped_requester) {
     return NULL;
   }
   using RequesterType = DDS::rpc::Requester<
-      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Request_,
-      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Response_>;
+    @(__dds_request_msg_type),
+    @(__dds_response_msg_type)>;
   RequesterType * requester = reinterpret_cast<RequesterType *>(untyped_requester);
   return requester->get_reply_datareader();
 }
 
 // Function to get the type erased dds request datawriter for the replier
-void * get_request_datareader__@(spec.srv_name)(void * untyped_replier)
+void * get_request_datareader__@(service.namespaced_type.name)(void * untyped_replier)
 {
   if (!untyped_replier) {
     return NULL;
   }
   using ReplierType = DDS::rpc::Replier<
-      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Request_,
-      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Response_>;
+    @(__dds_request_msg_type),
+    @(__dds_response_msg_type)>;
   ReplierType * replier = reinterpret_cast<ReplierType *>(untyped_replier);
   return replier->get_request_datareader();
 }
 
 // Function to get the type erased dds reply datawriter for the replier
-void * get_reply_datawriter__@(spec.srv_name)(void * untyped_replier)
+void * get_reply_datawriter__@(service.namespaced_type.name)(void * untyped_replier)
 {
   if (!untyped_replier) {
     return NULL;
   }
   using ReplierType = DDS::rpc::Replier<
-      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Request_,
-      @(spec.pkg_name)::@(subfolder)::dds_::@(spec.srv_name)_Response_>;
+    @(__dds_request_msg_type),
+    @(__dds_response_msg_type)>;
   ReplierType * replier = reinterpret_cast<ReplierType *>(untyped_replier);
   return replier->get_reply_datawriter();
 }
 
-static service_type_support_callbacks_t callbacks = {
-  "@(spec.pkg_name)",
-  "@(spec.srv_name)",
-  &create_requester__@(spec.srv_name),
-  &destroy_requester__@(spec.srv_name),
-  &create_replier__@(spec.srv_name),
-  &destroy_replier__@(spec.srv_name),
-  &send_request__@(spec.srv_name),
-  &take_request__@(spec.srv_name),
-  &send_response__@(spec.srv_name),
-  &take_response__@(spec.srv_name),
-  &get_request_datawriter__@(spec.srv_name),
-  &get_reply_datareader__@(spec.srv_name),
-  &get_request_datareader__@(spec.srv_name),
-  &get_reply_datawriter__@(spec.srv_name),
+static service_type_support_callbacks_t _@(service.namespaced_type.name)__callbacks = {
+  "@('::'.join([package_name] + list(interface_path.parents[0].parts)))",
+  "@(service.namespaced_type.name)",
+  &create_requester__@(service.namespaced_type.name),
+  &destroy_requester__@(service.namespaced_type.name),
+  &create_replier__@(service.namespaced_type.name),
+  &destroy_replier__@(service.namespaced_type.name),
+  &send_request__@(service.namespaced_type.name),
+  &take_request__@(service.namespaced_type.name),
+  &send_response__@(service.namespaced_type.name),
+  &take_response__@(service.namespaced_type.name),
+  &get_request_datawriter__@(service.namespaced_type.name),
+  &get_reply_datareader__@(service.namespaced_type.name),
+  &get_request_datareader__@(service.namespaced_type.name),
+  &get_reply_datawriter__@(service.namespaced_type.name),
 };
 
-static rosidl_service_type_support_t handle = {
+static rosidl_service_type_support_t _@(service.namespaced_type.name)__handle = {
   rosidl_typesupport_coredx_cpp::typesupport_coredx_identifier,
-  &callbacks,
+  &_@(service.namespaced_type.name)__callbacks,
   get_service_typesupport_handle_function,
 };
 
 }  // namespace typesupport_coredx_cpp
-
-}  // namespace @(subfolder)
-
-}  // namespace @(spec.pkg_name)
+@[for ns in reversed(service.namespaced_type.namespaces)]@
+}  // namespace @(ns)
+@[end for]@
 
 namespace rosidl_typesupport_coredx_cpp
 {
 
 template<>
-ROSIDL_TYPESUPPORT_COREDX_CPP_EXPORT_@(spec.pkg_name)
+ROSIDL_TYPESUPPORT_COREDX_CPP_EXPORT_@(package_name)
 const rosidl_service_type_support_t *
-get_service_type_support_handle<@(spec.pkg_name)::@(subfolder)::@(spec.srv_name)>()
+get_service_type_support_handle<@(__ros_srv_type)>()
 {
-  return &@(spec.pkg_name)::@(subfolder)::typesupport_coredx_cpp::handle;
+  return &@(__ros_srv_pkg_prefix)::typesupport_coredx_cpp::_@(service.namespaced_type.name)__handle;
 }
 
 }  // namespace rosidl_typesupport_coredx_cpp
@@ -386,8 +433,12 @@ extern "C"
 #endif
 
 const rosidl_service_type_support_t *
-ROSIDL_TYPESUPPORT_INTERFACE__SERVICE_SYMBOL_NAME(rosidl_typesupport_coredx_cpp, @(spec.pkg_name), @(subfolder), @(spec.srv_name))() {
-  return &@(spec.pkg_name)::@(subfolder)::typesupport_coredx_cpp::handle;
+ROSIDL_TYPESUPPORT_INTERFACE__SERVICE_SYMBOL_NAME(
+  rosidl_typesupport_coredx_cpp,
+  @(', '.join([package_name] + list(interface_path.parents[0].parts))),
+  @(service.namespaced_type.name))()
+{
+  return &@(__ros_srv_pkg_prefix)::typesupport_coredx_cpp::_@(service.namespaced_type.name)__handle;
 }
 
 #ifdef __cplusplus

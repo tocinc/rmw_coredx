@@ -85,7 +85,8 @@ extern "C" {
     /* Is this intended to answer for only 'local' (locally created) nodes or
        for any/all discovered node[s] too?
     */
-    
+    (void)demangle; 
+   
     /* NOT YET IMPLEMENTED  */
     return RMW_RET_ERROR;
   }
@@ -147,6 +148,7 @@ extern "C" {
     /* Is this intended to answer for only 'local' (locally created) nodes or
        for any/all discovered node[s] too?
     */
+    (void)demangle;
     
     /* NOT YET IMPLEMENTED  */
     return RMW_RET_ERROR;

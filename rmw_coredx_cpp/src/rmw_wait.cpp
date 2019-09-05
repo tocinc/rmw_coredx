@@ -42,11 +42,12 @@ rmw_wait( rmw_subscriptions_t    * subscriptions,
           rmw_guard_conditions_t * guard_conditions,
           rmw_services_t         * services,
           rmw_clients_t          * clients,
-          rmw_wait_set_t          * waitset,
-          const rmw_time_t             * wait_timeout )
+	  rmw_events_t           * events,
+          rmw_wait_set_t         * waitset,
+          const rmw_time_t       * wait_timeout )
 {
   return wait<CoreDXStaticSubscriberInfo, CoreDXStaticServiceInfo, CoreDXStaticClientInfo>
-    (toc_coredx_identifier, subscriptions, guard_conditions, services, clients, waitset, wait_timeout);
+    (toc_coredx_identifier, subscriptions, guard_conditions, services, clients, events, waitset, wait_timeout);
 }
 
 

@@ -43,8 +43,10 @@ rmw_ret_t
 rmw_take_with_info( const rmw_subscription_t * subscription,
                     void                     * ros_message,
                     bool                     * taken,
-                    rmw_message_info_t       * message_info )
+                    rmw_message_info_t       * message_info,
+		    rmw_subscription_allocation_t * allocation )
 {
+  (void)allocation;
   if (!message_info) {
     RMW_SET_ERROR_MSG("message info is null");
     return RMW_RET_ERROR;

@@ -114,6 +114,15 @@ rmw_init ( const rmw_init_options_t * options,
   return retval;
 }
 
+
+rmw_ret_t
+rmw_context_fini(rmw_context_t * context)
+{
+  // we didn't allocate anything in rmw_init(), so nothing to do...
+  return RMW_RET_OK;
+}
+  
+
 #if defined(__cplusplus)
 }  // extern "C"
 #endif

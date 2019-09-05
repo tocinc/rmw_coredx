@@ -97,9 +97,12 @@ add_library(rmw_coredx_cpp SHARED
   src/rmw_get_topic_names_and_types.cpp
   src/rmw_init.cpp
   src/rmw_node_get_graph_guard_condition.cpp
+  src/rmw_node_assert_liveliness.cpp
   src/rmw_publish.cpp
   src/rmw_publish_serialized.cpp
+  src/rmw_publisher_assert_liveliness.cpp
   src/rmw_publisher_count_matched_subscriptions.cpp
+  src/rmw_publisher_get_actual_qos.cpp
   src/rmw_send_request.cpp
   src/rmw_send_response.cpp
   src/rmw_serialize.cpp
@@ -107,6 +110,7 @@ add_library(rmw_coredx_cpp SHARED
   src/rmw_shutdown.cpp
   src/rmw_subscription_count_matched_publishers.cpp
   src/rmw_take.cpp
+  src/rmw_take_event.cpp
   src/rmw_take_request.cpp
   src/rmw_take_response.cpp
   src/rmw_take_serialized.cpp

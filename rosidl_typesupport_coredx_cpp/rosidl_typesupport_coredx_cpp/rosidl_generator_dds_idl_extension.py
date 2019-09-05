@@ -15,12 +15,10 @@
 
 from rosidl_generator_dds_idl import get_post_struct_lines as get_default_post_struct_lines
 
-def get_post_struct_lines(spec):
-    lines = get_default_post_struct_lines(spec)
-    # str="// " + spec.base_type.pkg_name + "::" + spec.base_type.type
-    # lines.append(str)
-    if '_Request' in spec.base_type.type:
-        lines.append('//@request_type')
-    elif '_Response' in spec.base_type.type:
-        lines.append('//@reply_type')
+def get_post_struct_lines(message):
+    lines = get_default_post_struct_lines(message)
+    if message.structure.namespaced_type.name.endswith('_Request'):
+         lines.append('//@request_type')
+    elif message.structure.namespaced_type.name.endswith('_Response'):
+         lines.append('//@reply_type')
     return lines

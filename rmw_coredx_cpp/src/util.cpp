@@ -32,9 +32,17 @@
 
 /* ************************************************
  */
-template<typename EntityQos>
-bool set_entity_qos_from_profile(const rmw_qos_profile_t * qos_profile,
-                                 EntityQos               & entity_qos)
+bool
+is_time_default(const rmw_time_t & time)
+{
+  return time.sec == 0 && time.nsec == 0;
+}
+
+/* ************************************************
+ */
+template<typename DDSEntityQos>
+bool set_entity_qos_from_profile_generic(const rmw_qos_profile_t * qos_profile,
+					 DDSEntityQos      & entity_qos)
 {
   // and, let's just dial down latency.
   entity_qos.latency_budget.duration.sec     = 0;
@@ -102,9 +110,59 @@ bool set_entity_qos_from_profile(const rmw_qos_profile_t * qos_profile,
     entity_qos.history.depth = static_cast<int32_t>(qos_profile->depth);
   }
 
+  // deadline
+  if ( !is_time_default( qos_profile->deadline ) ) {
+    entity_qos.deadline.period.sec     = qos_profile->deadline.sec;
+    entity_qos.deadline.period.nanosec = qos_profile->deadline.nsec;
+  }
+
+  // liveliness
+  switch ( qos_profile->liveliness )
+    {
+    default:
+    case RMW_QOS_POLICY_LIVELINESS_AUTOMATIC:
+      entity_qos.liveliness.kind = DDS::AUTOMATIC_LIVELINESS_QOS;
+      break;
+    case RMW_QOS_POLICY_LIVELINESS_MANUAL_BY_NODE:
+      entity_qos.liveliness.kind = DDS::MANUAL_BY_PARTICIPANT_LIVELINESS_QOS;
+      break;
+    case RMW_QOS_POLICY_LIVELINESS_MANUAL_BY_TOPIC:
+      entity_qos.liveliness.kind = DDS::MANUAL_BY_TOPIC_LIVELINESS_QOS;
+      break;
+    }
+  if ( !is_time_default( qos_profile->liveliness_lease_duration ) ) {
+    entity_qos.liveliness.lease_duration.sec     = qos_profile->liveliness_lease_duration.sec;
+    entity_qos.liveliness.lease_duration.nanosec = qos_profile->liveliness_lease_duration.nsec;
+  }
+  
   return true;
 }
 
+/* ************************************************
+ */
+bool
+set_entity_qos_from_profile(
+  const rmw_qos_profile_t * qos_profile,
+  DDS::DataReaderQos & entity_qos)
+{
+  // Set any QoS settings that are specific to DataReader, then call the shared version
+  return set_entity_qos_from_profile_generic(qos_profile, entity_qos);
+}
+
+/* ************************************************
+ */
+bool
+set_entity_qos_from_profile(
+  const rmw_qos_profile_t * qos_profile,
+  DDS::DataWriterQos & entity_qos)
+{
+  // Set any QoS settings that are specific to DataWriter, then call the shared version
+  if ( !is_time_default( qos_profile->lifespan ) ) {
+    entity_qos.lifespan.duration.sec = qos_profile->lifespan.sec;
+    entity_qos.lifespan.duration.nanosec = qos_profile->lifespan.nsec;
+  }
+  return set_entity_qos_from_profile_generic(qos_profile, entity_qos);
+}
 
 /* ************************************************
  */
@@ -122,8 +180,6 @@ rmw_ret_t check_attach_condition_error(DDS::ReturnCode_t retcode)
   }
   return RMW_RET_ERROR;
 }
-
-
 
 /* ************************************************
  */

@@ -41,8 +41,10 @@ extern "C" {
 rmw_ret_t
 rmw_take_serialized_message( const rmw_subscription_t * subscription,
 			     rmw_serialized_message_t * serialized_message,
-			     bool                     * taken )
+			     bool                     * taken,
+			     rmw_subscription_allocation_t * allocation )
 {
+  (void)allocation;
   rmw_ret_t retval = RMW_RET_ERROR;
   // --------------------------------------------------------
   // stand-in until we support a take_serialized() API
@@ -79,7 +81,8 @@ rmw_ret_t
 rmw_take_serialized_message_with_info( const rmw_subscription_t * subscription,
 				       rmw_serialized_message_t * serialized_message,
 				       bool                     * taken,
-				       rmw_message_info_t       * message_info )
+				       rmw_message_info_t       * message_info,
+				       rmw_subscription_allocation_t * allocation )
 {
   rmw_ret_t retval = RMW_RET_ERROR;
   // --------------------------------------------------------
@@ -99,7 +102,7 @@ rmw_take_serialized_message_with_info( const rmw_subscription_t * subscription,
   void * ros_msg = callbacks->alloc_ros_msg( (rcutils_allocator_t*)&serialized_message->allocator );
   //   :: take next message
   if ( ros_msg ) {
-    retval = rmw_take_with_info(subscription, ros_msg, taken, message_info);
+    retval = rmw_take_with_info(subscription, ros_msg, taken, message_info, allocation);
     //   :: serialize ros_msg to serialized_messsage
     if ( retval == RMW_RET_OK ) {
       callbacks->serialize( ros_msg, serialized_message );

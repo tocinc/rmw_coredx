@@ -39,17 +39,23 @@ extern "C" {
 /* ************************************************
  */
 rmw_wait_set_t *
-rmw_create_wait_set(size_t max_conditions)
+rmw_create_wait_set(rmw_context_t * context,
+		    size_t max_conditions)
 {
-  rmw_wait_set_t    * waitset = rmw_wait_set_allocate();
-  CoreDXWaitSetInfo * waitset_info = nullptr;
-  
   RCUTILS_LOG_DEBUG_NAMED(
     "rmw_coredx_cpp",
     "%s[ begin ]",
     __FUNCTION__ );
+  
+  RCUTILS_CHECK_ARGUMENT_FOR_NULL(context, NULL);
+  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
+    init context,
+    context->implementation_identifier,
+    toc_coredx_identifier,
+    return NULL);
 
-  // From here onward, error results in unrolling in the goto fail block.
+  CoreDXWaitSetInfo * waitset_info = nullptr;
+  rmw_wait_set_t * waitset = rmw_wait_set_allocate();
   if (!waitset) {
     RMW_SET_ERROR_MSG("failed to allocate waitset");
     goto fail;
