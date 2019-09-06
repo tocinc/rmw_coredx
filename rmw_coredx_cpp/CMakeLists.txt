@@ -93,6 +93,7 @@ add_library(rmw_coredx_cpp SHARED
   src/rmw_get_node_info_and_types.cpp
   src/rmw_get_node_names.cpp
   src/rmw_get_serialization_format.cpp
+  src/rmw_get_serialized_message_size.cpp
   src/rmw_get_service_names_and_types.cpp
   src/rmw_get_topic_names_and_types.cpp
   src/rmw_init.cpp
@@ -100,6 +101,7 @@ add_library(rmw_coredx_cpp SHARED
   src/rmw_node_assert_liveliness.cpp
   src/rmw_publish.cpp
   src/rmw_publish_serialized.cpp
+  src/rmw_publisher_allocation.cpp
   src/rmw_publisher_assert_liveliness.cpp
   src/rmw_publisher_count_matched_subscriptions.cpp
   src/rmw_publisher_get_actual_qos.cpp
@@ -107,7 +109,9 @@ add_library(rmw_coredx_cpp SHARED
   src/rmw_send_response.cpp
   src/rmw_serialize.cpp
   src/rmw_service_server_is_available.cpp
+  src/rmw_set_log_severity.cpp
   src/rmw_shutdown.cpp
+  src/rmw_subscription_allocation.cpp
   src/rmw_subscription_count_matched_publishers.cpp
   src/rmw_take.cpp
   src/rmw_take_event.cpp
