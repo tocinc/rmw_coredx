@@ -13,6 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "rmw/rmw.h"
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -21,7 +23,7 @@ extern "C" {
   rmw_set_log_severity(rmw_log_severity_t severity)
   {
     /* what is expected? */
-    (void)severity; 
+    (void)severity;
     return RMW_RET_OK;
   }
 
@@ -29,4 +31,3 @@ extern "C" {
 #if defined(__cplusplus)
 }
 #endif
-  

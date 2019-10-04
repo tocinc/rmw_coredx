@@ -14,6 +14,7 @@
 // limitations under the License.
 
 #include <rmw/rmw.h>
+#include "rmw/error_handling.h"
 
 
 #if defined(__cplusplus)
@@ -33,7 +34,7 @@ extern "C" {
     RMW_SET_ERROR_MSG("notyet");
     return RMW_RET_ERROR;
   }
-  
+
   rmw_ret_t
   rmw_fini_subscription_allocation( rmw_subscription_allocation_t * allocation )
   {
@@ -45,4 +46,3 @@ extern "C" {
 #if defined(__cplusplus)
 }  // extern "C"
 #endif
-
