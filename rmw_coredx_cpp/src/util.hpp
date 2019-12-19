@@ -51,7 +51,7 @@ _create_type_name(
 {
   return
     std::string(callbacks->package_name) +
-    "::" + sep + "::dds_::" + callbacks->message_name + "_";
+    (sep.empty() ? "" : "::") + sep + "::dds_::" + callbacks->message_name + "_";
 }
 
 #define RMW_COREDX_EXTRACT_MESSAGE_TYPESUPPORT(TYPE_SUPPORTS, TYPE_SUPPORT) \

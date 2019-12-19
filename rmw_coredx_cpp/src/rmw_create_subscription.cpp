@@ -92,7 +92,7 @@ rmw_create_subscription( const rmw_node_t        * node,
     return NULL;
   }
 
-  std::string type_name = _create_type_name(callbacks, "msg");
+  std::string type_name = _create_type_name(callbacks, "");
   std::string tmp_topic_name;
   if ( !qos_policies->avoid_ros_namespace_conventions ) {
     tmp_topic_name = std::string(ros_topic_prefix) + topic_name;

@@ -17,6 +17,12 @@ cmake_minimum_required(VERSION 3.5)
 
 project(rmw_coredx_cpp)
 
+# Default to C++14
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 14)
+endif()
+
+
 if(NOT WIN32)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra")
 endif()
@@ -45,6 +51,7 @@ if(NOT rosidl_typesupport_coredx_cpp_FOUND)
   return()
 endif()
 
+find_package(rcpputils REQUIRED)
 find_package(rcutils REQUIRED)
 find_package(rmw REQUIRED)
 find_package(rosidl_generator_c REQUIRED)
@@ -53,6 +60,7 @@ find_package(rosidl_generator_cpp REQUIRED)
 include_directories(include)
 
 ament_export_dependencies(
+  rcpputils
   rcutils
   rmw
   rosidl_generator_c
@@ -124,6 +132,7 @@ add_library(rmw_coredx_cpp SHARED
   src/util.cpp
   )
 ament_target_dependencies(rmw_coredx_cpp
+  "rcpputils"
   "rcutils"
   "rmw"
   "rosidl_generator_c"
