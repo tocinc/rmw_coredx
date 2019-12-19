@@ -29,6 +29,7 @@
   <build_export_depend>rosidl_typesupport_coredx_c</build_export_depend>
   <build_export_depend>rosidl_typesupport_coredx_cpp</build_export_depend>
 
+  <exec_depend>rcpputils</exec_depend>
   <exec_depend>rcutils</exec_depend>
   <exec_depend>rmw</exec_depend>
 

@@ -25,6 +25,8 @@
 #include <rmw/get_topic_names_and_types.h>
 #include <rmw/convert_rcutils_ret_to_rmw_ret.h>
 
+#include "rcpputils/find_and_replace.hpp"
+
 #include <rcutils/logging_macros.h>
 #include <rcutils/strdup.h>
 
@@ -53,19 +55,22 @@ _demangle_if_ros_topic(const std::string & topic_name)
 static std::string
 _demangle_if_ros_type(const std::string & dds_type_string)
 {
-  std::string substring = "::msg::dds_::";
+  //Previously the we ended up with package::msg/type instead of package/msg/type
+  std::string substring = "dds_::";
   size_t substring_position = dds_type_string.find(substring);
   if (
-    dds_type_string[dds_type_string.size() - 1] == '_' &&
-    substring_position != std::string::npos )
+    dds_type_string[dds_type_string.size() - 1] != '_' ||
+    substring_position == std::string::npos)
   {
-    std::string pkg = dds_type_string.substr( 0, substring_position );
-    size_t start = substring_position + substring.size();
-    std::string type_name = dds_type_string.substr( start, dds_type_string.length() - 1 - start );
-    return pkg + "/" + type_name;
+    // not a ROS type
+    return dds_type_string;
   }
-  // not a ROS type
-  return dds_type_string;
+
+  std::string type_namespace = dds_type_string.substr(0, substring_position);
+  type_namespace = rcpputils::find_and_replace(type_namespace, "::", "/");
+  size_t start = substring_position + substring.size();
+  std::string type_name = dds_type_string.substr(start, dds_type_string.length() - 1 - start);
+  return type_namespace + type_name;
 }
   
 /* ************************************************
