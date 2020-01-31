@@ -53,7 +53,7 @@ _demangle_if_ros_topic(const std::string & topic_name)
 static std::string
 _demangle_if_ros_type(const std::string & dds_type_string)
 {
-  std::string substring = "::msg::dds_::";
+  std::string substring = "::msg::msg::dds_::";
   size_t substring_position = dds_type_string.find(substring);
   if (
     dds_type_string[dds_type_string.size() - 1] == '_' &&
